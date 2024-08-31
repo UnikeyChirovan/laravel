@@ -16,9 +16,16 @@ use App\Http\Controllers\UserController;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
+// Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+//     return $request->user();
+// });
+
+Route::group([
+
+    'middleware' => 'api',
+    'prefix' => 'auth'
+
+], function ($router) {
 
 Route::get('/user/{id}', [UserController::class, 'show']);
 Route::get('/users', [UserController::class, 'index']);
@@ -28,3 +35,6 @@ Route::get('/users/{id}/edit', [UserController::class, 'edit']);
 Route::put('/users/{id}', [UserController::class, 'update']);
 Route::post('/login', [UserController::class, 'login']);
 Route::delete('/users/{id}', [UserController::class, 'destroy']);
+Route::post('/refresh', [UserController::class, 'refreshToken']);
+});
+
