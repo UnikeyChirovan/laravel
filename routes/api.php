@@ -4,7 +4,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 
-
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -16,25 +15,24 @@ use App\Http\Controllers\UserController;
 |
 */
 
-// Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-//     return $request->user();
-// });
-
 Route::group([
-
-    'middleware' => 'api',
+    'middleware' => ['api', 'blacklist', 'throttle.requests'],
     'prefix' => 'auth'
-
-], function ($router) {
-
-Route::get('/user/{id}', [UserController::class, 'show']);
-Route::get('/users', [UserController::class, 'index']);
-Route::get('/users/create', [UserController::class, 'create']);
-Route::post('/users', [UserController::class, 'store']);
-Route::get('/users/{id}/edit', [UserController::class, 'edit']);
-Route::put('/users/{id}', [UserController::class, 'update']);
-Route::post('/login', [UserController::class, 'login']);
-Route::delete('/users/{id}', [UserController::class, 'destroy']);
-Route::post('/refresh', [UserController::class, 'refreshToken']);
+], 
+function () {
+    Route::get('/user/{id}', [UserController::class, 'show']);
+    Route::get('/users', [UserController::class, 'index']);
+    Route::get('/users/create', [UserController::class, 'create']);
+    Route::post('/users', [UserController::class, 'store']);
+    Route::get('/users/{id}/edit', [UserController::class, 'edit']);
+    Route::put('/users/{id}', [UserController::class, 'update']);
+    Route::delete('/users/{id}', [UserController::class, 'destroy']);
+    Route::post('/register', [UserController::class, 'register']);
+    // Route::post('/login', [UserController::class, 'login']);
+    Route::post('/refresh', [UserController::class, 'refreshToken']);
+    Route::get('/device-info', [UserController::class, 'getAllDeviceInfo']);
+    Route::get('/blacklist', [UserController::class, 'getAllBlacklist']);
+    Route::post('/transfer-to-blacklist/{userId}', [UserController::class, 'transferToBlacklist']);
 });
 
+Route::post('/login', [UserController::class, 'login'])->middleware('device.limit');

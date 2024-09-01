@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use queue;
 use App\Models\User;
+use App\Models\DeviceInfo;
 use Illuminate\Http\Request;
+use App\Models\BlacklistedIp;
 use Illuminate\Support\Facades\DB;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Controllers\Controller;
@@ -354,7 +356,105 @@ class UserController extends Controller
         // }
 
         // login with status_id and derpartment_id
-        public function login(Request $request)
+//         public function login(Request $request)
+// {
+//     $validated = $request->validate([
+//         "username_or_email" => "required",
+//         "password" => "required"
+//     ], [
+//         "username_or_email.required" => "Nhập tài khoản hoặc email",
+//         "password.required" => "Nhập mật khẩu"
+//     ]);
+//     $user = User::where(function($query) use ($request) {
+//         $query->where("username", $request->username_or_email)
+//             ->orWhere("email", $request->username_or_email);
+//     })->first();
+//     if (!$user) {
+//         return response()->json(["message" => "Tài khoản hoặc mật khẩu không chính xác"], 401);
+//     }
+//     if ($user->status_id == 2) {
+//         return response()->json([
+//             "message" => "Bạn đang bị tạm khóa, vui lòng liên hệ admin"
+//         ], 403);
+//     }
+//     if (Hash::check($request->password, $user->password)) {
+//         $isAdmin = $user->department_id == 1;
+//         $payload = [
+//             'isAdmin' => $isAdmin,
+//             'id' => $user->id
+//         ];
+//         $token = Auth::guard('api')->claims($payload)->attempt([
+//             'email' => $user->email,
+//             'password' => $request->password
+//         ]);
+//         if (!$token) {
+//             return response()->json(['error' => 'Unauthorized'], 401);
+//         }
+//         $refreshToken = $this->createRefreshToken($user);
+//         Redis::set($user->id, $refreshToken, 'EX', 60 * 24 * 30 * 60); // Expiry là 30 ngày
+//         $cookie = cookie('refresh_token', $refreshToken, 60 * 24 * 30, null, null, false, true);
+//         return $this->respondWithToken($token, $user)->cookie($cookie);
+//     }
+//     return response()->json(["message" => "Tài khoản hoặc mật khẩu không chính xác"], 401);
+// }
+
+// register with ip and user-agent:
+public function register(Request $request)
+{
+    // Xác thực dữ liệu với các thông báo lỗi tùy chỉnh
+    $request->validate([
+        'avatar' => 'nullable|string',
+        'username' => 'required|string|unique:users,username',
+        'name' => 'required|string|max:255',
+        'nickname' => 'required|string|max:255',
+        'email' => 'required|string|email|unique:users,email',
+        'password' => 'required|string|min:8|confirmed',
+    ], [
+        'username.required' => 'Nhập Tên Tài khoản',
+        'username.unique' => 'Tên Tài khoản đã tồn tại',
+
+        'name.required' => 'Nhập Họ và Tên',
+        'name.max' => 'Ký tự tối đa là 255',
+               
+        'nickname.required' => 'Nhập tên muốn hiển thị',
+        'nickname.max' => 'Ký tự tối đa là 255',
+
+        'email.required' => 'Nhập Email',
+        'email.email' => 'Email không hợp lệ',
+        'email.unique' => 'Email đã tồn tại',
+
+        'password.required' => 'Nhập Mật khẩu',
+        'password.confirmed' => 'Mật khẩu và Xác nhận mật khẩu không khớp',
+    ]);
+
+    // Tạo người dùng
+    $user = User::create([
+        'avatar' => $request->input('avatar'),
+        'username' => $request->input('username'),
+        'name' => $request->input('name'),
+        'nickname' => $request->input('nickname'),
+        'email' => $request->input('email'),
+        'password' => Hash::make($request->input('password')),
+        'login_at' => null,
+        'change_password_at' => null,
+    ]);
+
+    // Lưu thông tin vào bảng device_infos
+     DeviceInfo::create([
+        'user_id' => $user->id,
+        'ip_address' => $request->ip(),
+        'user_agent' => substr($request->userAgent() ?? 'unknown', 0, 255),
+    ]);
+
+    // Trả về phản hồi
+     return response()->json([
+        'message' => 'Chào mừng bạn đến với Selorson Tales'
+    ], 201);
+}
+
+// login with status id, department id , ip address, user agent
+
+public function login(Request $request)
 {
     $validated = $request->validate([
         "username_or_email" => "required",
@@ -363,19 +463,52 @@ class UserController extends Controller
         "username_or_email.required" => "Nhập tài khoản hoặc email",
         "password.required" => "Nhập mật khẩu"
     ]);
+
     $user = User::where(function($query) use ($request) {
         $query->where("username", $request->username_or_email)
-            ->orWhere("email", $request->username_or_email);
+              ->orWhere("email", $request->username_or_email);
     })->first();
+
     if (!$user) {
         return response()->json(["message" => "Tài khoản hoặc mật khẩu không chính xác"], 401);
     }
+
     if ($user->status_id == 2) {
         return response()->json([
             "message" => "Bạn đang bị tạm khóa, vui lòng liên hệ admin"
         ], 403);
     }
+
+    // Kiểm tra điều kiện nếu status_id == 3
+    if ($user->status_id == 3) {
+        $statusChangeTime = $user->updated_at; // Thời điểm status_id thay đổi
+        $currentTime = now();
+
+        // Kiểm tra nếu đã qua 3 ngày kể từ khi status_id thay đổi
+        if ($currentTime->diffInDays($statusChangeTime) < 3) {
+            return response()->json([
+                "message" => "Tài khoản của bạn bị hạn chế đăng nhập trong 3 ngày kể từ lần thay đổi trạng thái cuối cùng."
+            ], 403);
+        }
+    }
+
+    // Nếu status_id == 4, đưa thông tin vào blacklist
+    if ($user->status_id == 4) {
+        BlacklistedIp::create([
+            'user_id' => $user->id,
+            'ip_address' => $request->ip(),
+            'user_agent' => substr($request->userAgent() ?? 'unknown', 0, 255)
+        ]);
+
+        return response()->json([
+            "message" => "Tài khoản của bạn đã bị đưa vào danh sách đen và không thể đăng nhập."
+        ], 403);
+    }
+
     if (Hash::check($request->password, $user->password)) {
+
+
+        // Tạo token và trả về response
         $isAdmin = $user->department_id == 1;
         $payload = [
             'isAdmin' => $isAdmin,
@@ -385,16 +518,30 @@ class UserController extends Controller
             'email' => $user->email,
             'password' => $request->password
         ]);
+
         if (!$token) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
+        DeviceInfo::updateOrCreate(
+            [
+                'user_id' => $user->id,
+                'ip_address' => $request->ip(),
+                'user_agent' => substr($request->userAgent() ?? 'unknown', 0, 255)
+            ]
+        );
+
+
         $refreshToken = $this->createRefreshToken($user);
         Redis::set($user->id, $refreshToken, 'EX', 60 * 24 * 30 * 60); // Expiry là 30 ngày
         $cookie = cookie('refresh_token', $refreshToken, 60 * 24 * 30, null, null, false, true);
-        return $this->respondWithToken($token, $user)->cookie($cookie);
+
+        return $this->respondWithToken($token, $user, $isAdmin)->cookie($cookie);
     }
+
     return response()->json(["message" => "Tài khoản hoặc mật khẩu không chính xác"], 401);
 }
+
+
 
 
 
@@ -483,5 +630,61 @@ private function createRefreshToken($user)
     return $refreshToken;
 }
 
+// UserController.php
 
- }
+public function getAllDeviceInfo()
+{
+    // Lấy toàn bộ thông tin từ bảng device_infos
+    $deviceInfos = DeviceInfo::all();
+    
+    return response()->json([
+        'device_infos' => $deviceInfos,
+    ]);
+}
+
+public function getAllBlacklist()
+{
+    // Lấy toàn bộ thông tin từ bảng blacklisted_ips
+    $blacklist = BlacklistedIp::all();
+    
+    return response()->json([
+        'blacklist' => $blacklist,
+    ]);
+}
+// UserController.php
+
+public function transferToBlacklist($userId)
+{
+    // Tìm thông tin thiết bị của người dùng
+    $deviceInfo = DeviceInfo::where('user_id', $userId)->first();
+
+    if (!$deviceInfo) {
+        return response()->json(['message' => 'Không tìm thấy thông tin thiết bị.'], 404);
+    }
+
+    // Kiểm tra xem thông tin đã có trong blacklist chưa
+    $existingBlacklist = BlacklistedIp::where('user_id', $deviceInfo->user_id)
+                                          ->where('ip_address', $deviceInfo->ip_address)
+                                          ->where('user_agent', $deviceInfo->user_agent)
+                                          ->first();
+
+    if ($existingBlacklist) {
+        return response()->json(['message' => 'Thông tin đã có trong blacklist.'], 400);
+    }
+
+    // Thêm thông tin vào blacklist
+    BlacklistedIp::create([
+        'user_id' => $deviceInfo->user_id,
+        'ip_address' => $deviceInfo->ip_address,
+        'user_agent' => $deviceInfo->user_agent,
+        'reason' => 'Người dùng vi phạm chính sách.',
+    ]);
+
+    // Xóa thông tin thiết bị
+    $deviceInfo->delete();
+
+    return response()->json(['message' => 'Thông tin đã được chuyển vào blacklist.']);
+}
+
+
+}

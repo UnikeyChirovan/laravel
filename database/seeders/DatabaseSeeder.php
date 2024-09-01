@@ -21,7 +21,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
         DepartmentsSeeder::class,
         UsersStatusSeeder::class,
-        UserSeeder::class
+        UserSeeder::class,
+        BlacklistedIpSeeder::class,
    
     ]);
     }

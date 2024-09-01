@@ -16,7 +16,9 @@ class UsersStatusSeeder extends Seeder
     {
         DB::table("users_status")->insert([
             ["name" => "Hoạt động"],
-            ["name" => "Tạm khóa"]
+            ["name" => "Tạm khóa"],
+            ["name" => "Cấm 3 ngày"],
+            ["name" => "Cấm vĩnh viễn"]
         ]);
     }
 }
