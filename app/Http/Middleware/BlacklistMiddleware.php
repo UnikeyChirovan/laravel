@@ -16,7 +16,7 @@ class BlacklistMiddleware
 
         // Kiểm tra blacklist IP hoặc user agent
         $blacklisted = BlacklistedIp::where('ip_address', $ip)
-            ->orWhere('user_agent', $userAgent)
+            ->where('user_agent', $userAgent)
             ->first();
 
         if ($blacklisted) {

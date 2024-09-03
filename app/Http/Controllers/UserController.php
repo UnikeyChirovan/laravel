@@ -176,286 +176,16 @@ class UserController extends Controller
             }
         }
 
-        
-        // public function login(Request $request)
-        // {
-        //     $validated = $request->validate([
-        //         "username_or_email" => "required",
-        //         "password" => "required"
-        //     ], [
-        //         "username_or_email.required" => "Nhập tài khoản hoặc email",
-        //         "password.required" => "Nhập mật khẩu"
-        //     ]);
-
-        //     $user = User::where(function($query) use ($request) {
-        //                 $query->where("username", $request->username_or_email)
-        //                     ->orWhere("email", $request->username_or_email);
-        //             })->first();
-
-        //     if ($user && Hash::check($request->password, $user->password)) {
-        //         return response()->json([
-        //             "message" => "Đăng nhập thành công",
-        //             "user" => $user
-        //         ]);
-        //     }
-        //     return response()->json([
-        //         "message" => "Tài khoản hoặc mật khẩu không chính xác"
-        //     ], 401);
-        // }
-
-        // new with access token
-
-        // public function login(Request $request)
-        // {
-        // // Validate incoming request
-        //     $validated = $request->validate([
-        //         "username_or_email" => "required",
-        //         "password" => "required"
-        //     ], [
-        //         "username_or_email.required" => "Nhập tài khoản hoặc email",
-        //         "password.required" => "Nhập mật khẩu"
-        //     ]);
-
-        //     // Check user existence
-        //     $user = User::where(function($query) use ($request) {
-        //         $query->where("username", $request->username_or_email)
-        //             ->orWhere("email", $request->username_or_email);
-        //     })->first();
-
-        //     // Verify user and password
-        //     if ($user && Hash::check($request->password, $user->password)) {
-        //         // Generate JWT token
-        //         $token = JWTAuth::fromUser($user);
-
-        //         // Return success response with JWT token
-        //         return response()->json([
-        //             "message" => "Đăng nhập thành công",
-        //             "user" => $user,
-        //             "token" => $token
-        //         ]);
-        //     }
-
-        //     // Return error response if credentials are invalid
-        //     return response()->json([
-        //         "message" => "Tài khoản hoặc mật khẩu không chính xác"
-        //     ], 401);
-        // }
-
-        // new with jwt
-//         public function login(Request $request)
-//         {
-//             // Validate request
-//             $validated = $request->validate([
-//                 "username_or_email" => "required",
-//                 "password" => "required"
-//             ], [
-//                 "username_or_email.required" => "Nhập tài khoản hoặc email",
-//                 "password.required" => "Nhập mật khẩu"
-//             ]);
-
-//             // Tìm kiếm người dùng bằng username hoặc email
-//             $user = User::where(function($query) use ($request) {
-//                             $query->where("username", $request->username_or_email)
-//                                 ->orWhere("email", $request->username_or_email);
-//                         })->first();
-
-//             // Kiểm tra mật khẩu
-//             if ($user && Hash::check($request->password, $user->password)) {
-//                 // Tạo JWT token dựa trên email và password của người dùng
-//                 if (! $token = auth()->attempt(['email' => $user->email, 'password' => $request->password])) {
-//                     return response()->json(['error' => 'Unauthorized'], 401);
-//                 }
-
-//                 // Tạo refresh token
-//                 $refreshToken = $this->createRefreshToken();
-
-//                 // Trả về thông tin người dùng và token
-//                 return $this->respondWithToken($token, $refreshToken, $user);
-//             }
-
-//             // Trường hợp đăng nhập thất bại
-//             return response()->json([
-//                 "message" => "Tài khoản hoặc mật khẩu không chính xác"
-//             ], 401);
-//         }
-
-
-//         protected function respondWithToken($token, $refreshToken, $user)
-//     {
-//         return response()->json([
-//             'user' => $user,
-//             'access_token' => $token,
-//             'refresh_token' => $refreshToken,
-//             'token_type' => 'bearer',
-//             'expires_in' => auth()->factory()->getTTL() * 60
-//         ]);
-//     }
-
-//     private function createRefreshToken(){
-//          $data = [
-//             'user_id' => auth('api')->user()->id,
-//             'random' => rand() . time(),
-//             'exp' => time() + config('jwt.refresh_ttl')
-//         ];
-//          $refreshToken = JWTAuth::getJWTProvider()->encode($data);
-//          return $refreshToken;
-//     }
-
 
 
         public function destroy($id){
             User::find($id)->delete();
         }
 
-            // new all
-        // public function login(Request $request)
-        // {
-        //     // Validate request
-        //     $validated = $request->validate([
-        //         "username_or_email" => "required",
-        //         "password" => "required"
-        //     ], [
-        //         "username_or_email.required" => "Nhập tài khoản hoặc email",
-        //         "password.required" => "Nhập mật khẩu"
-        //     ]);
-
-        //     $user = User::where(function($query) use ($request) {
-        //         $query->where("username", $request->username_or_email)
-        //             ->orWhere("email", $request->username_or_email);
-        //     })->first();
-
-
-        //     // kiểm tra status id
-
-
-
-        //     if ($user && Hash::check($request->password, $user->password)) {
-
-        //         // auth()->invalidate();
-    
-                
-        //         // Tạo JWT token trường hợp không phải là admin hoặc là admin?
-        //         if (!$token = Auth::guard('api')->attempt(['email' => $user->email, 'password' => $request->password])) {
-        //             return response()->json(['error' => 'Unauthorized'], 401);
-        //         }
-
-        //         // Tạo refresh token
-        //         $refreshToken = $this->createRefreshToken($user);
-
-        //         // Lưu refresh token vào cookie
-        //         $cookie = cookie('refresh_token', $refreshToken, 60 * 24 * 30, null, null, false, true);
-
-        //         // Trả về thông tin người dùng và access token
-        //         return $this->respondWithToken($token, $user)->cookie($cookie);
-        //     }
-
-        //     // Trường hợp đăng nhập thất bại
-        //     return response()->json([
-        //         "message" => "Tài khoản hoặc mật khẩu không chính xác"
-        //     ], 401);
-        // }
-
-        // login with status_id and derpartment_id
-//         public function login(Request $request)
-// {
-//     $validated = $request->validate([
-//         "username_or_email" => "required",
-//         "password" => "required"
-//     ], [
-//         "username_or_email.required" => "Nhập tài khoản hoặc email",
-//         "password.required" => "Nhập mật khẩu"
-//     ]);
-//     $user = User::where(function($query) use ($request) {
-//         $query->where("username", $request->username_or_email)
-//             ->orWhere("email", $request->username_or_email);
-//     })->first();
-//     if (!$user) {
-//         return response()->json(["message" => "Tài khoản hoặc mật khẩu không chính xác"], 401);
-//     }
-//     if ($user->status_id == 2) {
-//         return response()->json([
-//             "message" => "Bạn đang bị tạm khóa, vui lòng liên hệ admin"
-//         ], 403);
-//     }
-//     if (Hash::check($request->password, $user->password)) {
-//         $isAdmin = $user->department_id == 1;
-//         $payload = [
-//             'isAdmin' => $isAdmin,
-//             'id' => $user->id
-//         ];
-//         $token = Auth::guard('api')->claims($payload)->attempt([
-//             'email' => $user->email,
-//             'password' => $request->password
-//         ]);
-//         if (!$token) {
-//             return response()->json(['error' => 'Unauthorized'], 401);
-//         }
-//         $refreshToken = $this->createRefreshToken($user);
-//         Redis::set($user->id, $refreshToken, 'EX', 60 * 24 * 30 * 60); // Expiry là 30 ngày
-//         $cookie = cookie('refresh_token', $refreshToken, 60 * 24 * 30, null, null, false, true);
-//         return $this->respondWithToken($token, $user)->cookie($cookie);
-//     }
-//     return response()->json(["message" => "Tài khoản hoặc mật khẩu không chính xác"], 401);
-// }
-
-// register with ip and user-agent:
-public function register(Request $request)
-{
-    // Xác thực dữ liệu với các thông báo lỗi tùy chỉnh
-    $request->validate([
-        'avatar' => 'nullable|string',
-        'username' => 'required|string|unique:users,username',
-        'name' => 'required|string|max:255',
-        'nickname' => 'required|string|max:255',
-        'email' => 'required|string|email|unique:users,email',
-        'password' => 'required|string|min:8|confirmed',
-    ], [
-        'username.required' => 'Nhập Tên Tài khoản',
-        'username.unique' => 'Tên Tài khoản đã tồn tại',
-
-        'name.required' => 'Nhập Họ và Tên',
-        'name.max' => 'Ký tự tối đa là 255',
-               
-        'nickname.required' => 'Nhập tên muốn hiển thị',
-        'nickname.max' => 'Ký tự tối đa là 255',
-
-        'email.required' => 'Nhập Email',
-        'email.email' => 'Email không hợp lệ',
-        'email.unique' => 'Email đã tồn tại',
-
-        'password.required' => 'Nhập Mật khẩu',
-        'password.confirmed' => 'Mật khẩu và Xác nhận mật khẩu không khớp',
-    ]);
-
-    // Tạo người dùng
-    $user = User::create([
-        'avatar' => $request->input('avatar'),
-        'username' => $request->input('username'),
-        'name' => $request->input('name'),
-        'nickname' => $request->input('nickname'),
-        'email' => $request->input('email'),
-        'password' => Hash::make($request->input('password')),
-        'login_at' => null,
-        'change_password_at' => null,
-    ]);
-
-    // Lưu thông tin vào bảng device_infos
-     DeviceInfo::create([
-        'user_id' => $user->id,
-        'ip_address' => $request->ip(),
-        'user_agent' => substr($request->userAgent() ?? 'unknown', 0, 255),
-    ]);
-
-    // Trả về phản hồi
-     return response()->json([
-        'message' => 'Chào mừng bạn đến với Selorson Tales'
-    ], 201);
-}
-
-// login with status id, department id , ip address, user agent
 
 public function login(Request $request)
 {
+    // Xác thực thông tin người dùng
     $validated = $request->validate([
         "username_or_email" => "required",
         "password" => "required"
@@ -464,27 +194,29 @@ public function login(Request $request)
         "password.required" => "Nhập mật khẩu"
     ]);
 
+    // Tìm kiếm người dùng dựa trên username hoặc email
     $user = User::where(function($query) use ($request) {
         $query->where("username", $request->username_or_email)
               ->orWhere("email", $request->username_or_email);
     })->first();
 
+    // Nếu không tìm thấy người dùng
     if (!$user) {
         return response()->json(["message" => "Tài khoản hoặc mật khẩu không chính xác"], 401);
     }
 
+    // Kiểm tra trạng thái khóa tài khoản
     if ($user->status_id == 2) {
         return response()->json([
             "message" => "Bạn đang bị tạm khóa, vui lòng liên hệ admin"
         ], 403);
     }
 
-    // Kiểm tra điều kiện nếu status_id == 3
+    // Kiểm tra trạng thái hạn chế đăng nhập trong 3 ngày
     if ($user->status_id == 3) {
-        $statusChangeTime = $user->updated_at; // Thời điểm status_id thay đổi
+        $statusChangeTime = $user->updated_at; 
         $currentTime = now();
 
-        // Kiểm tra nếu đã qua 3 ngày kể từ khi status_id thay đổi
         if ($currentTime->diffInDays($statusChangeTime) < 3) {
             return response()->json([
                 "message" => "Tài khoản của bạn bị hạn chế đăng nhập trong 3 ngày kể từ lần thay đổi trạng thái cuối cùng."
@@ -492,7 +224,7 @@ public function login(Request $request)
         }
     }
 
-    // Nếu status_id == 4, đưa thông tin vào blacklist
+    // Kiểm tra danh sách đen
     if ($user->status_id == 4) {
         BlacklistedIp::create([
             'user_id' => $user->id,
@@ -505,23 +237,30 @@ public function login(Request $request)
         ], 403);
     }
 
+    // Kiểm tra mật khẩu
     if (Hash::check($request->password, $user->password)) {
 
-
-        // Tạo token và trả về response
+        // Xác định nếu là admin
         $isAdmin = $user->department_id == 1;
+
+        // Tạo payload cho JWT
         $payload = [
             'isAdmin' => $isAdmin,
             'id' => $user->id
         ];
+
+        // Tạo access token với JWT và thông tin người dùng
         $token = Auth::guard('api')->claims($payload)->attempt([
             'email' => $user->email,
             'password' => $request->password
         ]);
 
+        // Nếu không tạo được token
         if (!$token) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
+
+        // Cập nhật hoặc tạo thông tin thiết bị
         DeviceInfo::updateOrCreate(
             [
                 'user_id' => $user->id,
@@ -530,16 +269,19 @@ public function login(Request $request)
             ]
         );
 
-
+        // Tạo refresh token và lưu vào Redis
         $refreshToken = $this->createRefreshToken($user);
-        Redis::set($user->id, $refreshToken, 'EX', 60 * 24 * 30 * 60); // Expiry là 30 ngày
+        Redis::set($user->id, $refreshToken, 'EX', 60 * 24 * 30 * 60); // Hết hạn sau 30 ngày
         $cookie = cookie('refresh_token', $refreshToken, 60 * 24 * 30, null, null, false, true);
 
+        // Trả về token và cookie
         return $this->respondWithToken($token, $user, $isAdmin)->cookie($cookie);
     }
 
+    // Nếu mật khẩu không chính xác
     return response()->json(["message" => "Tài khoản hoặc mật khẩu không chính xác"], 401);
 }
+
 
 
 
@@ -595,16 +337,25 @@ public function login(Request $request)
             }
 
 
-protected function respondWithToken($token, $user)
+protected function respondWithToken($token, $user, $isAdmin)
 {
     return response()->json([
-        'user' => $user,
-        'isAdmin' => $user->department_id == 1 ? true : false,
+        'user' => [
+            'id' => $user->id,
+            'username' => $user->username,
+            'email' => $user->email,
+            'nickname'=>$user->nickname,
+            'name'=>$user->name,
+            'department_id' => $user->department_id,
+            'status_id' => $user->status_id,
+        ],
+        'isAdmin' => $isAdmin,
         'access_token' => $token,
         'token_type' => 'bearer',
-        'expires_in' => Auth::guard('api')->factory()->getTTL() * 60  // TTL của access token
+        'expires_in' => Auth::guard('api')->factory()->getTTL() * 60  // TTL của access token (giây)
     ]);
 }
+
 
 
 private function createRefreshToken($user)
@@ -684,6 +435,54 @@ public function transferToBlacklist($userId)
     $deviceInfo->delete();
 
     return response()->json(['message' => 'Thông tin đã được chuyển vào blacklist.']);
+}
+
+
+public function register(Request $request)
+{
+    $validated = $request->validate([
+        "status_id" => "required",
+        "username" => "required|unique:users,username",
+        "name" => "required|max:255",
+        "nickname" => "required|max:255",
+        "email" => "required|email",
+        "department_id" => "required",
+        "password" => "required|confirmed"
+    ], [
+        "username.required" => "Nhập Tên Tài khoản",
+        "username.unique" => "Tên Tài khoản đã tồn tại",
+        "name.required" => "Nhập Họ và Tên",
+        "name.max" => "Ký tự tối đa là 255",
+        "nickname.required" => "Nhập tên muốn hiển thị",
+        "nickname.max" => "Ký tự tối đa là 255",
+        "email.required" => "Nhập Email",
+        "email.email" => "Email không hợp lệ",
+        "password.required" => "Nhập Mật khẩu",
+        "password.confirmed" => "Mật khẩu và Xác nhận mật khẩu không khớp"
+    ]);
+
+    // Tạo User
+    $user = User::create([
+        "status_id" => $validated["status_id"],
+        "username" => $validated["username"],
+        "name" => $validated["name"],
+        "nickname" => $validated["nickname"],
+        "email" => $validated["email"],
+        "department_id" => $validated["department_id"],
+        "password" => Hash::make($validated["password"])
+    ]);
+
+    // Tạo DeviceInfo
+    DeviceInfo::create([
+        'user_id' => $user->id,
+        'ip_address' => $request->ip(),
+        'user_agent' => substr($request->userAgent() ?? 'unknown', 0, 255)
+    ]);
+
+        // Trả về phản hồi
+     return response()->json([
+        "message" => "Bạn đã đăng ký thành công!"
+    ], 200);
 }
 
 
