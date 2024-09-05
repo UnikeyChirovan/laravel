@@ -183,9 +183,83 @@ class UserController extends Controller
         }
 
 
+// public function login(Request $request)
+// {
+//     $validated = $request->validate([
+//         "username_or_email" => "required",
+//         "password" => "required"
+//     ], [
+//         "username_or_email.required" => "Nhập tài khoản hoặc email",
+//         "password.required" => "Nhập mật khẩu"
+//     ]);
+//     $user = User::where(function($query) use ($request) {
+//         $query->where("username", $request->username_or_email)
+//               ->orWhere("email", $request->username_or_email);
+//     })->first();
+//     if (!$user) {
+//         return response()->json(["message" => "Tài khoản hoặc mật khẩu không chính xác"], 401);
+//     }
+//     if ($user->status_id == 2) {
+//         return response()->json([
+//             "message" => "Bạn đang bị tạm khóa, vui lòng liên hệ admin"
+//         ], 403);
+//     }
+//     if ($user->status_id == 3) {
+//         $statusChangeTime = $user->updated_at; 
+//         $currentTime = now();
+
+//         if ($currentTime->diffInDays($statusChangeTime) < 3) {
+//             return response()->json([
+//                 "message" => "Tài khoản của bạn bị hạn chế đăng nhập trong 3 ngày kể từ lần thay đổi trạng thái cuối cùng."
+//             ], 403);
+//         }
+//     }
+//     if ($user->status_id == 4) {
+//         BlacklistedIp::create([
+//             'user_id' => $user->id,
+//             'ip_address' => $request->ip(),
+//             'user_agent' => substr($request->userAgent() ?? 'unknown', 0, 255)
+//         ]);
+
+//         return response()->json([
+//             "message" => "Tài khoản của bạn đã bị đưa vào danh sách đen và không thể đăng nhập."
+//         ], 403);
+//     }
+//     if (Hash::check($request->password, $user->password)) {
+//         $isAdmin = $user->department_id == 1;
+//         $payload = [
+//             'isAdmin' => $isAdmin,
+//             'id' => $user->id
+//         ];
+//         $token = Auth::guard('api')->claims($payload)->attempt([
+//             'email' => $user->email,
+//             'password' => $request->password
+//         ]);
+//         if (!$token) {
+//             return response()->json(['error' => 'Unauthorized'], 401);
+//         }
+//         DeviceInfo::updateOrCreate(
+//             [
+//                 'user_id' => $user->id,
+//                 'ip_address' => $request->ip(),
+//                 'user_agent' => substr($request->userAgent() ?? 'unknown', 0, 255)
+//             ]
+//         );
+//         $refreshToken = $this->createRefreshToken($user);
+//         Redis::set($user->id, $refreshToken, 'EX', 60 * 24 * 30 * 60); // Hết hạn sau 30 ngày
+//         $cookie = cookie('refresh_token', $refreshToken, 60 * 24 * 30, null, null, false, true);
+
+//         return $this->respondWithToken($token, $user, $isAdmin)->cookie($cookie);
+//     }
+//     return response()->json(["message" => "Tài khoản hoặc mật khẩu không chính xác"], 401);
+// }
+
+    // public function __construct()
+    // {
+    //     $this->middleware('auth:api', ['except' => ['login']]);
+    // }
 public function login(Request $request)
 {
-    // Xác thực thông tin người dùng
     $validated = $request->validate([
         "username_or_email" => "required",
         "password" => "required"
@@ -194,25 +268,29 @@ public function login(Request $request)
         "password.required" => "Nhập mật khẩu"
     ]);
 
-    // Tìm kiếm người dùng dựa trên username hoặc email
     $user = User::where(function($query) use ($request) {
         $query->where("username", $request->username_or_email)
               ->orWhere("email", $request->username_or_email);
     })->first();
 
-    // Nếu không tìm thấy người dùng
     if (!$user) {
         return response()->json(["message" => "Tài khoản hoặc mật khẩu không chính xác"], 401);
     }
 
-    // Kiểm tra trạng thái khóa tài khoản
+    // Check if the user has more than 2 unique user agents
+    $deviceCount = DeviceInfo::where('user_id', $user->id)->count();
+    if ($deviceCount >= 2) {
+        return response()->json([
+            "message" => "bạn đang đăng nhập trên nhiều thiết bị hoặc trình duyệt, vui lòng đăng xuất 1 tài khoản hoặc liên hệ admin"
+        ], 403);
+    }
+
     if ($user->status_id == 2) {
         return response()->json([
             "message" => "Bạn đang bị tạm khóa, vui lòng liên hệ admin"
         ], 403);
     }
 
-    // Kiểm tra trạng thái hạn chế đăng nhập trong 3 ngày
     if ($user->status_id == 3) {
         $statusChangeTime = $user->updated_at; 
         $currentTime = now();
@@ -224,7 +302,6 @@ public function login(Request $request)
         }
     }
 
-    // Kiểm tra danh sách đen
     if ($user->status_id == 4) {
         BlacklistedIp::create([
             'user_id' => $user->id,
@@ -237,30 +314,23 @@ public function login(Request $request)
         ], 403);
     }
 
-    // Kiểm tra mật khẩu
     if (Hash::check($request->password, $user->password)) {
-
-        // Xác định nếu là admin
         $isAdmin = $user->department_id == 1;
-
-        // Tạo payload cho JWT
         $payload = [
             'isAdmin' => $isAdmin,
             'id' => $user->id
         ];
 
-        // Tạo access token với JWT và thông tin người dùng
         $token = Auth::guard('api')->claims($payload)->attempt([
             'email' => $user->email,
             'password' => $request->password
         ]);
 
-        // Nếu không tạo được token
         if (!$token) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        // Cập nhật hoặc tạo thông tin thiết bị
+        // Add or update the current device information
         DeviceInfo::updateOrCreate(
             [
                 'user_id' => $user->id,
@@ -269,16 +339,15 @@ public function login(Request $request)
             ]
         );
 
-        // Tạo refresh token và lưu vào Redis
         $refreshToken = $this->createRefreshToken($user);
-        Redis::set($user->id, $refreshToken, 'EX', 60 * 24 * 30 * 60); // Hết hạn sau 30 ngày
-        $cookie = cookie('refresh_token', $refreshToken, 60 * 24 * 30, null, null, false, true);
+        $key = "refresh_tokens:" . $user->id;
+        Redis::rpush($key, $refreshToken);
 
-        // Trả về token và cookie
+        $cookie = cookie('refresh_token', $refreshToken, 60 * 24 * 30, null, null, false, true, false, 'None');
+
         return $this->respondWithToken($token, $user, $isAdmin)->cookie($cookie);
     }
 
-    // Nếu mật khẩu không chính xác
     return response()->json(["message" => "Tài khoản hoặc mật khẩu không chính xác"], 401);
 }
 
@@ -288,53 +357,57 @@ public function login(Request $request)
 
 
 
-            public function refreshToken(Request $request)
-            {
-                $refreshToken = $request->cookie('refresh_token');
-                if (!$refreshToken) {
-                    return response()->json(['error' => 'Refresh token missing'], 401);
-                }
 
-                if (Redis::get('blacklist:refresh_token:' . $refreshToken)) {
-                    return response()->json(['error' => 'Token has been blacklisted'], 401);
-                }
+public function refreshToken(Request $request)
+{
+    $refreshToken = $request->cookie('refresh_token');
+    
+    if (!$refreshToken) {
+        return response()->json(['error' => 'Refresh token missing'], 401);
+    }
 
-                try {
-                    // Giải mã refresh token để xác định người dùng
-                    $payload = JWTAuth::setToken($refreshToken)->getPayload();
-                    $userId = $payload->get('sub'); // Lấy user ID từ payload
+    try {
+        // Giải mã refresh token để xác định người dùng
+        $payload = JWTAuth::setToken($refreshToken)->getPayload();
+        $userId = $payload->get('sub'); // Lấy user ID từ payload
+        $userAgent = $payload->get('user_agent'); // Lấy user-agent từ payload
 
-                    // Xác định chính xác người dùng đang đăng nhập
-                    if (!$user = Auth::guard('api')->loginUsingId($userId)) {
-                        return response()->json(['error' => 'Invalid user'], 401);
-                    }
+        // Xác định chính xác người dùng đang đăng nhập
+        if (!$user = Auth::guard('api')->loginUsingId($userId)) {
+            return response()->json(['error' => 'Invalid user'], 401);
+        }
 
-                    // Lấy TTL còn lại của refresh token cũ
-                    $ttl = $payload->get('exp') - time();
+        // Lấy danh sách refresh token từ Redis dựa vào user_id
+        $key = "refresh_tokens:" . $userId;
+        $storedTokens = Redis::lrange($key, 0, -1);
 
-                    // Đưa refresh token cũ vào blacklist
-                    Redis::setex('blacklist:refresh_token:' . $refreshToken, $ttl, true);
+        // Kiểm tra xem refresh token có tồn tại trong Redis không
+        if (!in_array($refreshToken, $storedTokens)) {
+            return response()->json(['error' => 'Refresh token not found'], 401);
+        }
 
-                    // Xóa refresh token cũ khỏi cookie
-                    Cookie::queue(Cookie::forget('refresh_token'));
+        // Xóa refresh token cũ khỏi Redis và cookie
+        Redis::lrem($key, 0, $refreshToken);
+        Cookie::queue(Cookie::forget('refresh_token'));
 
-                    // Tạo mới access token và refresh token
-                    $newAccessToken = Auth::guard('api')->refresh();
-                    $newRefreshToken = $this->createRefreshToken($user);
+        // Tạo mới access token và refresh token
+        $newAccessToken = Auth::guard('api')->refresh();
+        $newRefreshToken = $this->createRefreshToken($user);
 
-                    // Lưu refresh token mới vào cookie
-                   $cookie = cookie('refresh_token', $newRefreshToken, 60 * 24 * 30, null, null, false, true);
+        // Lưu refresh token mới vào Redis và cookie
+        Redis::rpush($key, $newRefreshToken);
+        $cookie = cookie('refresh_token', $newRefreshToken, 60 * 24 * 30, null, null, false, true);
 
-                    // Trả về access token mới
-                    return response()->json([
-                        'access_token' => $newAccessToken,
-                        'token_type' => 'bearer',
-                        'expires_in' => Auth::guard('api')->factory()->getTTL() * 60
-                    ])->cookie($cookie);
-                } catch (\Exception $e) {
-                    return response()->json(['error' => 'Invalid refresh token'], 401);
-                }
-            }
+        // Trả về access token mới
+        return response()->json([
+            'access_token' => $newAccessToken,
+            'token_type' => 'bearer',
+            'expires_in' => Auth::guard('api')->factory()->getTTL() * 60
+        ])->cookie($cookie);
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'Invalid refresh token'], 401);
+    }
+}
 
 
 protected function respondWithToken($token, $user, $isAdmin)
@@ -363,20 +436,27 @@ private function createRefreshToken($user)
     // Xác định người dùng có phải là admin hay không dựa vào department_id
     $isAdmin = $user->department_id == 1;
 
+    // Lấy thông tin user agent từ bảng device_infos
+    $deviceInfo = DeviceInfo::where('user_id', $user->id)
+                            ->orderBy('created_at', 'desc')
+                            ->first();
+
+    if (!$deviceInfo) {
+        return response()->json(["message" => "Không tìm thấy thông tin thiết bị"], 403);
+    }
+
     // Tạo các custom claims cho refresh token
     $customClaims = [
         'sub' => $user->id,  // ID người dùng
         'jti' => uniqid(),  // Unique ID cho token để tăng độ bảo mật
         'iat' => time(),  // Thời gian tạo token
         'exp' => time() + config('jwt.refresh_ttl') * 60,  // Thời gian hết hạn của refresh token
-        'isAdmin' => $isAdmin  // Thêm isAdmin vào refresh token
+        'isAdmin' => $isAdmin,  // Thêm isAdmin vào refresh token
+        'user_agent' => $deviceInfo->user_agent  // Lấy user agent từ device_infos
     ];
 
     // Tạo refresh token với custom claims
     $refreshToken = JWTAuth::customClaims($customClaims)->fromUser($user);
-
-    // Lưu refresh token vào Redis với key là refresh token và giá trị là ID người dùng
-    Redis::set($refreshToken, $user->id, 'EX', config('jwt.refresh_ttl') * 60);
 
     return $refreshToken;
 }
@@ -484,6 +564,47 @@ public function register(Request $request)
         "message" => "Bạn đã đăng ký thành công!"
     ], 200);
 }
+
+public function logout(Request $request)
+{
+    // Xác thực token từ request, nếu không hợp lệ thì trả về lỗi
+    $token = $request->bearerToken();
+    
+    if (!$token || !Auth::guard('api')->check()) {
+        return response()->json(['message' => 'Token không hợp lệ hoặc User không được xác thực'], 401);
+    }
+
+    // Lấy thông tin user từ access token
+    $user = Auth::guard('api')->user();
+    
+    if (!$user) {
+        return response()->json(['message' => 'User không được xác thực'], 401);
+    }
+
+    // Xóa thông tin thiết bị
+    DeviceInfo::where('user_id', $user->id)
+        ->where('user_agent', substr($request->userAgent() ?? 'unknown', 0, 255))
+        ->delete();
+
+    // Xóa refresh token từ Redis
+    $key = "refresh_tokens:" . $user->id;
+    $refreshToken = $request->cookie('refresh_token');
+    
+    if ($refreshToken) {
+        Redis::lrem($key, 0, $refreshToken);
+    } else {
+        return response()->json(['message' => 'Không tìm thấy refresh token trong cookie'], 400);
+    }
+
+    // Xóa cookie refresh token
+    $cookie = cookie('refresh_token', '', -1);
+
+    // Thực hiện đăng xuất JWT
+    Auth::guard('api')->logout();
+
+    return response()->json(['message' => 'Đăng xuất thành công'])->cookie($cookie);
+}
+
 
 
 }

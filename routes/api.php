@@ -15,6 +15,7 @@ use App\Http\Controllers\UserController;
 |
 */
 Route::post('/register', [UserController::class, 'register']);
+Route::post('/auth/logout', [UserController::class, 'logout']);
 
 Route::group([
     'middleware' => ['api', 'blacklist', 'throttle.requests'],
