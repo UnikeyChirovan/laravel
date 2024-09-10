@@ -14,6 +14,9 @@ use App\Http\Controllers\UserController;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+Route::options('/{any}', function (Request $request) {
+    return response()->json([], 204);
+})->where('any', '.*');
 Route::post('/register', [UserController::class, 'register']);
 Route::post('/auth/logout', [UserController::class, 'logout']);
 
