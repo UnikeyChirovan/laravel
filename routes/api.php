@@ -19,6 +19,7 @@ Route::options('/{any}', function (Request $request) {
 })->where('any', '.*');
 Route::post('/register', [UserController::class, 'register']);
 Route::post('/auth/logout', [UserController::class, 'logout']);
+Route::get('/auth/check-session', [UserController::class, 'checkSession']);
 
 Route::group([
     'middleware' => ['api', 'blacklist', 'throttle.requests'],
