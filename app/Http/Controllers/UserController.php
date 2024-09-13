@@ -498,7 +498,10 @@ class UserController extends Controller
         $verification = EmailVerification::where('token', $token)->first();
 
         if (!$verification) {
-            return response()->json(["message" => "Token không hợp lệ hoặc đã hết hạn."], 400);
+            return view('emails.verify-email', [
+            'message' => 'Liên kết xác thực đã hết hạn!',
+            'status' => 'error'
+        ]);
         }
 
         $user = User::find($verification->user_id);
@@ -510,7 +513,10 @@ class UserController extends Controller
 
             $verification->delete();
 
-            return response()->json(["message" => "Xác thực email thành công!"], 200);
+            return view('emails.verify-email', [
+                'message' => 'Xác thực tài khoản thành công, bạn có thể đăng nhập tài khoản!',
+                'status' => 'success'
+            ]);
         }
 
         return response()->json(["message" => "Không tìm thấy người dùng."], 404);
