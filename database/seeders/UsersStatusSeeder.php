@@ -18,7 +18,8 @@ class UsersStatusSeeder extends Seeder
             ["name" => "Hoạt động"],
             ["name" => "Tạm khóa"],
             ["name" => "Cấm 3 ngày"],
-            ["name" => "Cấm vĩnh viễn"]
+            ["name" => "Cấm vĩnh viễn"],
+            ["name" => "Chưa xác thực"]
         ]);
     }
 }

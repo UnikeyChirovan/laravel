@@ -4,14 +4,18 @@ namespace App\Http\Controllers;
 
 use queue;
 use App\Models\User;
+use App\Mail\VerifyEmail;
 use App\Models\DeviceInfo;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Models\BlacklistedIp;
+use App\Models\EmailVerification;
 use Illuminate\Support\Facades\DB;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Cookie;
 
@@ -281,6 +285,11 @@ class UserController extends Controller
                 "message" => "Tài khoản của bạn đã bị đưa vào danh sách đen và không thể đăng nhập."
             ], 403);
         }
+        if ($user->status_id == 5) {
+            return response()->json([
+                "message" => "Tài khoản chưa được xác thực, hãy kiểm tra lại email"
+            ], 403);
+        }
         if (Hash::check($request->password, $user->password)) {
             $isAdmin = $user->department_id == 1;
             $token = $this->createAccessToken($user);
@@ -350,7 +359,7 @@ class UserController extends Controller
             "username" => "required|unique:users,username",
             "name" => "required|max:255",
             "nickname" => "required|max:255",
-            "email" => "required|email",
+            "email" => "required|email|unique:users,email",
             "department_id" => "required",
             "password" => "required|confirmed"
         ], [
@@ -362,6 +371,7 @@ class UserController extends Controller
             "nickname.max" => "Ký tự tối đa là 255",
             "email.required" => "Nhập Email",
             "email.email" => "Email không hợp lệ",
+            "email.unique" => "Email đã tồn tại",
             "password.required" => "Nhập Mật khẩu",
             "password.confirmed" => "Mật khẩu và Xác nhận mật khẩu không khớp"
         ]);
@@ -376,15 +386,42 @@ class UserController extends Controller
             "department_id" => $validated["department_id"],
             "password" => Hash::make($validated["password"])
         ]);
+
+        // Lưu thông tin thiết bị
         DeviceInfo::create([
             'user_id' => $user->id,
             'ip_address' => $request->ip(),
             'user_agent' => substr($request->userAgent() ?? 'unknown', 0, 255)
         ]);
+
+        // Tạo token xác thực email
+        $verificationToken = Str::random(64);
+        EmailVerification::create([
+            'user_id' => $user->id,
+            'token' => $verificationToken,
+        ]);
+
+        $verificationUrl = url('/api/verify-email?token=' . $verificationToken);
+
+        // Gửi email xác thực
+        try {
+            Mail::send('emails.verify', ['url' => $verificationUrl, 'user' => $user], function ($message) use ($user) {
+                $message->to($user->email);
+                $message->subject('Xác thực tài khoản của bạn');
+            });
+        } catch (\Exception $e) {
+            // Nếu có lỗi trong quá trình gửi email, xóa người dùng đã tạo
+            $user->delete();
+            return response()->json([
+                "message" => "Đăng ký thất bại! Vui lòng thử lại."
+            ], 500);
+        }
+
         return response()->json([
-            "message" => "Bạn đã đăng ký thành công!"
+            "message" => "Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản."
         ], 200);
     }
+
 
     public function refreshToken(Request $request)
     {
@@ -442,7 +479,7 @@ class UserController extends Controller
         return response()->json(['message' => 'Đăng xuất thành công'])->cookie($cookie);
     }
 
-     public function checkSession(Request $request)
+    public function checkSession(Request $request)
     {
         $refreshToken = $request->cookie('refresh_token');
         if (!$refreshToken) {
@@ -453,4 +490,31 @@ class UserController extends Controller
             'message' => 'Phiên đăng nhập hợp lệ',
         ], 200);
     }
+
+    public function verifyEmail(Request $request)
+    {
+        $token = $request->query('token');
+
+        $verification = EmailVerification::where('token', $token)->first();
+
+        if (!$verification) {
+            return response()->json(["message" => "Token không hợp lệ hoặc đã hết hạn."], 400);
+        }
+
+        $user = User::find($verification->user_id);
+
+        if ($user) {
+            $user->status_id = 1;
+            $user->email_verified_at = now();
+            $user->save();
+
+            $verification->delete();
+
+            return response()->json(["message" => "Xác thực email thành công!"], 200);
+        }
+
+        return response()->json(["message" => "Không tìm thấy người dùng."], 404);
+    }
+
+
 }
