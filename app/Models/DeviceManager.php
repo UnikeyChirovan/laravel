@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class DeviceInfo extends Model
+class DeviceManager extends Model
 {
     use HasFactory;
 
@@ -13,7 +13,6 @@ class DeviceInfo extends Model
         'user_id',
         'ip_address',
         'user_agent',
-        'session_id'
     ];
 
      public function user()
