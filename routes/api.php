@@ -4,6 +4,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\UploadController;
+use App\Http\Controllers\ProfileController;
 
 
 Route::options('/{any}', function (Request $request) {
@@ -30,7 +32,7 @@ Route::group([
     'prefix' => 'users',
     'middleware' => ['api', 'auth:api', 'blacklist', 'throttle.requests'],
 ], function () {
-    Route::get('/{id}', [UserController::class, 'show'])->name('users.show');
+    Route::get('/create', [UserController::class, 'create'])->name('users.create');
     Route::get('/', [UserController::class, 'index'])->name('users.index');
     Route::post('/', [UserController::class, 'store'])->name('users.store');
     Route::get('/{id}/edit', [UserController::class, 'edit'])->name('users.edit');
@@ -40,3 +42,25 @@ Route::group([
     Route::get('/blacklist', [UserController::class, 'getAllBlacklist'])->name('users.blacklist');
     Route::post('/transfer-to-blacklist/{userId}', [UserController::class, 'transferToBlacklist'])->name('users.transferToBlacklist');
 });
+
+
+Route::group([
+    'prefix' => 'link',
+    'middleware' => ['api', 'auth:api', 'blacklist', 'throttle.requests'],
+], function () {
+   Route::post('/upload/avatar', [UploadController::class, 'uploadAvatar']);
+   Route::post('/upload/cover', [UploadController::class, 'uploadCover']);
+});
+Route::group([
+    'prefix' => 'profile',
+    'middleware' => ['api', 'auth:api', 'blacklist', 'throttle.requests'],
+], function () {
+    Route::get('/{id}', [ProfileController::class, 'show'])->name('users.showprofile');
+    Route::get('/{id}/edit', [ProfileController::class, 'edit'])->name('users.editprofile');
+    Route::put('/{id}', [ProfileController::class, 'update'])->name('users.updateprofile');
+});
+
+
+
+//    Route::post('link/upload/avatar', [UploadController::class, 'uploadAvatar']);
+//    Route::post('link/upload/cover', [UploadController::class, 'uploadCover']);

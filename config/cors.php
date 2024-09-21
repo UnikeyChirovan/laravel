@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'paths' => ['api/*'],
+    'paths' => ['api/*','upload'],
     'allowed_methods' => ['*'],
     'allowed_origins' => [
     'http://127.0.0.1:8080',
@@ -11,7 +11,7 @@ return [
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['*'],
     'exposed_headers' => ['Authorization', 'Set-Cookie'],
-    'max_age' => 3600000,
+    'max_age' => 0,
     'supports_credentials' => true,
 ];
 

@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\Redis;
 
 class AuthController extends Controller
 {
-    protected function respondWithToken($token, $user, $isAdmin, $rememberMe)
+    protected function respondWithToken($token, $user, $isAdmin)
         {
             return response()->json([
                 'user' => [
@@ -33,7 +33,6 @@ class AuthController extends Controller
                 ],
                 'isAdmin' => $isAdmin,
                 'access_token' => $token,
-                'rememberMe' => $rememberMe,
                 'token_type' => 'bearer',
                 'expires_in' => Auth::guard('api')->factory()->getTTL() * 60  // TTL của access token (giây)
             ]);
@@ -157,7 +156,7 @@ class AuthController extends Controller
                 $Expiration = $rememberMe ? 60 * 24 * 14 : 60 * 24;
                 Redis::setex($key, $Expiration * 60, $refreshToken);
                 $cookie = cookie('refresh_token', $refreshToken, $Expiration, null, null, true, true, 'None');
-                return $this->respondWithToken($token, $user, $isAdmin, $rememberMe)->cookie($cookie);
+                return $this->respondWithToken($token, $user, $isAdmin)->cookie($cookie);
             }
             return response()->json(["message" => "Tài khoản hoặc mật khẩu không chính xác"], 401);
         }
@@ -248,12 +247,12 @@ class AuthController extends Controller
                 $sessionId = $payload->get('session_id');
                 $user = User::find($userId);
                 if (!$user) {
-                    return response()->json(['error' => 'User not found'], 401);
+                    return response()->json(['error' => 'User not found'], 403);
                 }
                 $key = "refresh_tokens:" . $userId . ":" . $tokenUserAgent . ":" . $sessionId;
                 $storedToken = Redis::get($key);
                 if ($storedToken !== $refreshToken) {
-                    return response()->json(['error' => 'Lỗi không xác định!'], 401);
+                    return response()->json(['error' => 'Lỗi không xác định!'], 403);
                 }
                 Redis::del($key);
                 $newAccessToken =  $this->createAccessToken($user, $tokenUserAgent, $sessionId);
@@ -266,7 +265,7 @@ class AuthController extends Controller
                     'expires_in' => Auth::guard('api')->factory()->getTTL() * 60
                 ])->cookie($cookie);
             } catch (\Exception $e) {
-                return response()->json(['error' => 'Invalid refresh token'], 401);
+                return response()->json(['error' => 'Invalid refresh token'], 403);
             }
         }
 
@@ -310,7 +309,7 @@ class AuthController extends Controller
                 DeviceInfo::where('user_id', $userId)
                             ->where('user_agent', $userAgent)
                             ->delete();
-                return response()->json(['message' => 'Đăng xuất thành công'], 200);
+                return response()->json(['message' => 'Vui lòng đăng nhập lại'], 200);
             } catch (\Exception $e) {
                 return response()->json(['message' => 'Lỗi khi xóa dữ liệu thiết bị: ' . $e->getMessage()], 500);
             }
