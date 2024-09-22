@@ -4,9 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
-use App\Models\BlacklistedIp;
-use App\Models\DeviceManager;
-use Illuminate\Support\Facades\DB;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
@@ -30,17 +27,6 @@ class ProfileController extends Controller
                 'hobbies',
                 'phone_number',
             ]));
-        }
-    public function create()
-        {
-            $genders = [
-                ['value' => 'Nam', 'label' => 'Nam'],
-                ['value' => 'Nữ', 'label' => 'Nữ']
-            ];
-
-            return response()->json([
-                "genders" => $genders
-            ]);
         }
 
     public function edit($id)

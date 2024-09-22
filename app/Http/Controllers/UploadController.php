@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use App\Models\User;
 
 class UploadController extends Controller
 {
@@ -19,21 +20,16 @@ class UploadController extends Controller
             try {
                 $file = $request->file('file');
                 $filename = 'avatar_' . time() . '.' . $file->getClientOriginalExtension();
-                $file->move(public_path('uploads/avatars'), $filename);
-                
-                // Xóa avatar cũ nếu có
+                $path = $file->storeAs("avatars/{$user->id}", $filename, 'public');
+
                 if ($user->avatar) {
-                    $oldAvatarPath = public_path('uploads/avatars/' . $user->avatar);
-                    if (file_exists($oldAvatarPath)) {
-                        unlink($oldAvatarPath);
-                    }
+                    Storage::disk('public')->delete("avatars/{$user->id}/" . $user->avatar);
                 }
 
-                // Cập nhật avatar mới cho user
                 $user->avatar = $filename;
                 $user->save();
 
-                $url = url('/uploads/avatars/' . $filename);
+                $url = Storage::url($path);
 
                 return response()->json(['url' => $url], 200);
             } catch (\Exception $e) {
@@ -55,21 +51,16 @@ class UploadController extends Controller
             try {
                 $file = $request->file('file');
                 $filename = 'cover_' . time() . '.' . $file->getClientOriginalExtension();
-                $file->move(public_path('uploads/covers'), $filename);
+                $path = $file->storeAs("covers/{$user->id}", $filename, 'public');
 
-                // Xóa cover cũ nếu có
                 if ($user->cover) {
-                    $oldCoverPath = public_path('uploads/covers/' . $user->cover);
-                    if (file_exists($oldCoverPath)) {
-                        unlink($oldCoverPath);
-                    }
+                    Storage::disk('public')->delete("covers/{$user->id}/" . $user->cover);
                 }
 
-                // Cập nhật cover mới cho user
                 $user->cover = $filename;
                 $user->save();
 
-                $url = url('/uploads/covers/' . $filename);
+                $url = Storage::url($path);
 
                 return response()->json(['url' => $url], 200);
             } catch (\Exception $e) {
@@ -80,6 +71,28 @@ class UploadController extends Controller
         return response()->json(['error' => 'Không có tệp nào được tải lên'], 400);
     }
 
+     public function deleteAvatar($id)
+    {
+        $user = User::findOrFail($id);
+        if ($user->avatar) {
+            Storage::disk('public')->delete("avatars/{$id}/{$user->avatar}");
+            $user->avatar = null;
+            $user->save();
+            return response()->json(['message' => 'Avatar deleted successfully']);
+        }
+        return response()->json(['message' => 'No avatar to delete'], 404);
+    }
 
-    
+    // Xóa cover
+    public function deleteCover($id)
+    {
+        $user = User::findOrFail($id);
+        if ($user->cover) {
+            Storage::disk('public')->delete("covers/{$id}/{$user->cover}");
+            $user->cover = null;
+            $user->save();
+            return response()->json(['message' => 'Cover deleted successfully']);
+        }
+        return response()->json(['message' => 'No cover to delete'], 404);
+    }
 }

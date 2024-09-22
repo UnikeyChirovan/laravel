@@ -48,8 +48,11 @@ Route::group([
     'prefix' => 'link',
     'middleware' => ['api', 'auth:api', 'blacklist', 'throttle.requests'],
 ], function () {
-   Route::post('/upload/avatar', [UploadController::class, 'uploadAvatar']);
-   Route::post('/upload/cover', [UploadController::class, 'uploadCover']);
+    Route::post('/upload/avatar', [UploadController::class, 'uploadAvatar']);
+    Route::post('/upload/cover', [UploadController::class, 'uploadCover']);
+    Route::delete('/{id}/avatar', [UploadController::class, 'deleteAvatar']);
+    Route::delete('/{id}/cover', [UploadController::class, 'deleteCover']);
+
 });
 Route::group([
     'prefix' => 'profile',
