@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ThrottleRequestsMiddleware
 {
-    protected $maxRequests = 10;
+    protected $maxRequests = 40;
 
     public function handle(Request $request, Closure $next): Response
     {

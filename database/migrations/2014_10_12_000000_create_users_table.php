@@ -28,6 +28,8 @@ return new class extends Migration
             $table->text('biography')->nullable(); 
             $table->text('hobbies')->nullable(); 
             $table->string('phone_number')->nullable(); 
+            $table->integer('avatar_position')->default(0); 
+            $table->integer('cover_position')->default(0); 
             $table->rememberToken();
             $table->timestamp('login_at')->nullable();
             $table->timestamp('change_password_at')->nullable();

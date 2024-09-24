@@ -61,6 +61,7 @@ Route::group([
     Route::get('/{id}', [ProfileController::class, 'show'])->name('users.showprofile');
     Route::get('/{id}/edit', [ProfileController::class, 'edit'])->name('users.editprofile');
     Route::put('/{id}', [ProfileController::class, 'update'])->name('users.updateprofile');
+    Route::put('/{id}/position', [ProfileController::class, 'updatePosition']);
 });
 
 

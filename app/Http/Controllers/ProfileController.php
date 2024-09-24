@@ -7,41 +7,44 @@ use Illuminate\Http\Request;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class ProfileController extends Controller
 {
     public function show($id)
-        {
-            $user = User::findOrFail($id);
-            return response()->json($user->only([
-                'name',
-                'username',
-                'avatar',
-                'email',
-                'cover',
-                'occupation',
-                'birthday',
-                'gender',
-                'address',
-                'biography',
-                'hobbies',
-                'phone_number',
-            ]));
-        }
+    {
+        $user = User::findOrFail($id);
+        return response()->json($user->only([
+            'name',
+            'username',
+            'avatar',
+            'email',
+            'cover',
+            'occupation',
+            'birthday',
+            'gender',
+            'address',
+            'biography',
+            'hobbies',
+            'phone_number',
+            'avatar_position', 
+            'cover_position', 
+        ]));
+    }
 
     public function edit($id)
-        {
-            $users = User::find($id);
-            $genders = [
-                ['value' => 'Nam', 'label' => 'Nam'],
-                ['value' => 'Nữ', 'label' => 'Nữ']
-             ];
+    {
+        $users = User::find($id);
+        $genders = [
+            ['value' => 'Nam', 'label' => 'Nam'],
+            ['value' => 'Nữ', 'label' => 'Nữ']
+         ];
 
-            return response()->json([
-                "users" => $users,
-                "genders" => $genders
-            ]);
-        }
+        return response()->json([
+            "users" => $users,
+            "genders" => $genders
+        ]);
+    }
 
     public function update(Request $request, $id)
     {
@@ -79,7 +82,7 @@ class ProfileController extends Controller
             "address" => "nullable|string|max:100",
             "biography" => "nullable|string",
             "hobbies" => "nullable|string",
-            "phone_number" => "nullable|string|max:20"
+            "phone_number" => "nullable|string|max:20",
         ], [
             "username.required" => "Nhập Tên Tài khoản",
             "username.unique" => "Tên Tài khoản đã tồn tại",
@@ -124,6 +127,50 @@ class ProfileController extends Controller
         return response()->json(['message' => 'Cập nhật thông tin thành công!'], 200);
     }
 
+    public function updatePosition(Request $request, $id)
+    {
+        // Lấy token từ request
+        $token = $request->bearerToken();
 
+        if ($token) {
+            try {
+                // Lấy payload từ token
+                $payload = JWTAuth::setToken($token)->getPayload();
+                // Lấy userID từ payload
+                $userID = $payload->get('id');
+                $isAdmin = $payload->get('isAdmin');
+
+                // So sánh userID với $id được gửi lên
+                if ($userID != $id && !$isAdmin) {
+                    return response()->json(['message' => 'Không được phép cập nhật thông tin người dùng khác!'], 403);
+                }
+            } catch (\Exception $e) {
+                return response()->json(['message' => 'Cập nhật người dùng không hợp lệ!'], 403);
+            }
+        } else {
+            return response()->json(['message' => 'Token không hợp lệ!'], 403);
+        }
+
+        // Xác thực dữ liệu
+        $validator = Validator::make($request->all(), [
+            'avatar_position' => 'nullable|integer',
+            'cover_position' => 'nullable|integer',
+        ], [
+            'avatar_position.integer' => 'Vị trí avatar phải là số nguyên.',
+            'cover_position.integer' => 'Vị trí cover phải là số nguyên.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // Cập nhật vị trí vào cơ sở dữ liệu
+        $user = User::findOrFail($id);
+        $user->avatar_position = $request->input('avatar_position', $user->avatar_position);
+        $user->cover_position = $request->input('cover_position', $user->cover_position);
+        $user->save();
+
+        return response()->json(['message' => 'Vị trí avatar và cover đã được cập nhật thành công!'], 200);
+    }
 
 }
