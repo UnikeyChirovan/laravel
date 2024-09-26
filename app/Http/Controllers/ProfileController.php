@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use App\Models\EmailVerification;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 
 class ProfileController extends Controller
@@ -15,6 +18,7 @@ class ProfileController extends Controller
     {
         $user = User::findOrFail($id);
         return response()->json($user->only([
+            'id',
             'name',
             'username',
             'avatar',
@@ -50,16 +54,13 @@ class ProfileController extends Controller
     {
         // Lấy token từ request
         $token = $request->bearerToken();
-        
+
         if ($token) {
             try {
-                // Lấy payload từ token
                 $payload = JWTAuth::setToken($token)->getPayload();
-                // Lấy userID từ payload
                 $userID = $payload->get('id');
                 $isAdmin = $payload->get('isAdmin');
 
-                // So sánh userID với $id được gửi lên
                 if ($userID != $id && !$isAdmin) {
                     return response()->json(['message' => 'Không được phép cập nhật thông tin người dùng khác!'], 403);
                 }
@@ -94,12 +95,40 @@ class ProfileController extends Controller
             "email.email" => "Email không hợp lệ",
         ]);
 
-        // Cập nhật các trường vào cơ sở dữ liệu
-        User::find($id)->update([
+        $user = User::find($id);
+
+        // Kiểm tra nếu email thay đổi
+        if ($user->email !== $request["email"]) {
+            // Cập nhật status_id thành 5 và yêu cầu xác thực email mới
+            $user->status_id = 5;
+            $user->email = $request["email"];
+            $user->save();
+
+            // Tạo token xác thực email
+            $verificationToken = Str::random(64);
+            EmailVerification::create([
+                'user_id' => $user->id,
+                'token' => $verificationToken,
+            ]);
+
+            $verificationUrl = url('/api/auth/verify-email?token=' . $verificationToken);
+
+            // Gửi email xác thực
+            try {
+                Mail::send('emails.verify', ['url' => $verificationUrl, 'user' => $user], function ($message) use ($user) {
+                    $message->to($user->email);
+                    $message->subject('Xác thực địa chỉ email của bạn');
+                });
+            } catch (\Exception $e) {
+                return response()->json(['message' => 'Không thể gửi email xác thực!'], 500);
+            }
+        }
+
+        // Cập nhật các trường khác
+        $user->update([
             "username" => $request["username"],
             "name" => $request["name"],
             "nickname" => $request["nickname"],
-            "email" => $request["email"],
             "occupation" => $request["occupation"],
             "birthday" => $request["birthday"],
             "gender" => $request["gender"],
@@ -118,14 +147,15 @@ class ProfileController extends Controller
                 "password.confirmed" => "Mật khẩu và Xác nhận mật khẩu không khớp"
             ]);
 
-            User::find($id)->update([
+            $user->update([
                 "password" => Hash::make($request["password"]),
-                "change_password_at" => NOW()
+                "change_password_at" => now()
             ]);
         }
 
         return response()->json(['message' => 'Cập nhật thông tin thành công!'], 200);
     }
+
 
     public function updatePosition(Request $request, $id)
     {

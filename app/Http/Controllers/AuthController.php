@@ -210,7 +210,7 @@ class AuthController extends Controller
                 'token' => $verificationToken,
             ]);
 
-            $verificationUrl = url('/api/verify-email?token=' . $verificationToken);
+            $verificationUrl = url('/api/auth/verify-email?token=' . $verificationToken);
 
             // Gửi email xác thực
             try {

@@ -6,39 +6,47 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Models\User;
+use Intervention\Image\ImageManagerStatic as Image;
 
 class UploadController extends Controller
 {
     public function uploadAvatar(Request $request)
-    {
+        {
         $user = Auth::user();
         $request->validate([
-            'file' => 'required|image|mimes:jpg,png,jpeg,gif|max:2048',
+            'file' => 'required|image|mimes:jpg,png,jpeg,gif|max:2048', 
+            'height' => 'required|numeric', 
+            'width' => 'required|numeric',   
+            'left' => 'required|numeric',    
+            'top' => 'required|numeric',   
         ]);
 
         if ($request->hasFile('file')) {
             try {
                 $file = $request->file('file');
                 $filename = 'avatar_' . time() . '.' . $file->getClientOriginalExtension();
-                $path = $file->storeAs("avatars/{$user->id}", $filename, 'public');
-
+                $image = Image::make($file);
+                $image->crop(
+                    (int) $request->input('width'),
+                    (int) $request->input('height'),
+                    (int) $request->input('left'),
+                    (int) $request->input('top')
+                );
+                $path = "avatars/{$user->id}/{$filename}";
+                Storage::disk('public')->put($path, (string) $image->encode());
                 if ($user->avatar) {
                     Storage::disk('public')->delete("avatars/{$user->id}/" . $user->avatar);
                 }
-
                 $user->avatar = $filename;
                 $user->save();
-
                 $url = Storage::url($path);
-
                 return response()->json(['url' => $url], 200);
             } catch (\Exception $e) {
                 return response()->json(['error' => 'Lỗi khi upload avatar: ' . $e->getMessage()], 500);
             }
         }
-
         return response()->json(['error' => 'Không có tệp nào được tải lên'], 400);
-    }
+        }
 
     public function uploadCover(Request $request)
     {
