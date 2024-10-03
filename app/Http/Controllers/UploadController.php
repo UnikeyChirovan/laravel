@@ -53,6 +53,7 @@ class UploadController extends Controller
         $user = Auth::user();
         $request->validate([
             'file' => 'required|image|mimes:jpg,png,jpeg,gif|max:2048',
+            'position' => 'required|numeric', 
         ]);
 
         if ($request->hasFile('file')) {
@@ -60,24 +61,21 @@ class UploadController extends Controller
                 $file = $request->file('file');
                 $filename = 'cover_' . time() . '.' . $file->getClientOriginalExtension();
                 $path = $file->storeAs("covers/{$user->id}", $filename, 'public');
-
                 if ($user->cover) {
                     Storage::disk('public')->delete("covers/{$user->id}/" . $user->cover);
                 }
-
                 $user->cover = $filename;
+                $user->cover_position = $request->position;
                 $user->save();
-
                 $url = Storage::url($path);
-
-                return response()->json(['url' => $url], 200);
+                return response()->json(['url' => $url, 'positionY' => $user->cover_position], 200);
             } catch (\Exception $e) {
                 return response()->json(['error' => 'Lỗi khi upload cover: ' . $e->getMessage()], 500);
             }
         }
-
         return response()->json(['error' => 'Không có tệp nào được tải lên'], 400);
     }
+
 
      public function deleteAvatar($id)
     {

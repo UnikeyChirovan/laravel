@@ -5,7 +5,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UploadController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\CompanyInfoController;
 
 
 Route::options('/{any}', function (Request $request) {
@@ -25,6 +27,15 @@ Route::group([
     Route::post('/password-reset-request', [AuthController::class, 'sendResetLinkEmail'])->name('auth.passwordResetRequest');
     Route::post('/password-reset', [AuthController::class, 'resetPassword'])->name('auth.passwordReset');
     Route::post('/refresh', [AuthController::class, 'refreshToken'])->name('auth.refreshToken');
+});
+Route::group([
+    'prefix' => 'noauth',
+    'middleware' => ['api', 'throttle.requests'],
+], function () {
+    Route::get('/contact', [CompanyInfoController::class, 'getInfo']);
+    Route::post('/contact', [ContactController::class, 'store']);
+    Route::get('/contacts', [ContactController::class, 'index']);
+
 });
 
 // User
