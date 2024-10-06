@@ -61,6 +61,7 @@ Route::group([
 ], function () {
     Route::post('/upload/avatar', [UploadController::class, 'uploadAvatar']);
     Route::post('/upload/cover', [UploadController::class, 'uploadCover']);
+    Route::patch('/update/cover-position', [UploadController::class, 'updateCoverPosition']);
     Route::delete('/{id}/avatar', [UploadController::class, 'deleteAvatar']);
     Route::delete('/{id}/cover', [UploadController::class, 'deleteCover']);
 

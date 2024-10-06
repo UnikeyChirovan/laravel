@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\BlacklistedIp;
 use App\Models\DeviceManager;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 
@@ -20,19 +21,34 @@ class UserController extends Controller
         {
             return User::findOrFail($id);
         }
-    public function index()
-        {
-            $users = User::where("users.id", "!=", "1")
-                ->join('departments', 'users.department_id', '=', 'departments.id')
-                ->join('users_status', 'users.status_id', '=', 'users_status.id')
-                ->select(
-                    'users.*',
-                    'departments.name as departments',
-                    'users_status.name as status')
-                ->get();
+public function index()
+{
+    // Ghi lại thời gian bắt đầu
+    Log::info('Starting user fetch process.');
 
-                return response()->json($users);
-        }
+    // Thời gian bắt đầu
+    $startTime = microtime(true);
+
+    $users = User::where("users.id", "!=", "1")
+        ->join('departments', 'users.department_id', '=', 'departments.id')
+        ->join('users_status', 'users.status_id', '=', 'users_status.id')
+        ->select(
+            'users.*',
+            'departments.name as departments',
+            'users_status.name as status'
+        )
+        ->get();
+
+    // Ghi lại thời gian kết thúc
+    $endTime = microtime(true);
+    $executionTime = $endTime - $startTime;
+
+    // Ghi log thời gian thực hiện
+    Log::info('User fetch process completed. Execution time: ' . $executionTime . ' seconds.');
+
+    return response()->json($users);
+}
+
     public function create()
         {
             $users_status = DB::table("users_status")
@@ -124,7 +140,7 @@ class UserController extends Controller
             ]);
         }
 
-        public function update(Request $request, $id)
+    public function update(Request $request, $id)
         {
             $validated = $request->validate([
                 "status_id" => "required",
@@ -173,7 +189,8 @@ class UserController extends Controller
 
 
 
-        public function destroy($id){
+    public function destroy($id)
+        {
             User::find($id)->delete();
         }
 

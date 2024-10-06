@@ -67,5 +67,6 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'blacklist' => \App\Http\Middleware\BlacklistMiddleware::class,
         'throttle.requests' => \App\Http\Middleware\ThrottleRequestsMiddleware::class,
+        'cache.response' => \App\Http\Middleware\CacheResponse::class,
     ];
 }

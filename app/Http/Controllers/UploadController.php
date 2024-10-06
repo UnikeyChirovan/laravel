@@ -75,6 +75,23 @@ class UploadController extends Controller
         }
         return response()->json(['error' => 'Không có tệp nào được tải lên'], 400);
     }
+    public function updateCoverPosition(Request $request)
+    {
+        $user = Auth::user();
+        $request->validate([
+            'position' => 'required|numeric',
+        ]);
+
+        try {
+            $user->cover_position = $request->position;
+            $user->save();
+
+            return response()->json(['positionY' => $user->cover_position], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Lỗi khi cập nhật vị trí cover: ' . $e->getMessage()], 500);
+        }
+    }
+
 
 
      public function deleteAvatar($id)
