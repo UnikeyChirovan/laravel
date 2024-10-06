@@ -76,7 +76,10 @@ Route::group([
     Route::put('/{id}/position', [ProfileController::class, 'updatePosition']);
 });
 
-
-
-//    Route::post('link/upload/avatar', [UploadController::class, 'uploadAvatar']);
-//    Route::post('link/upload/cover', [UploadController::class, 'uploadCover']);
+Route::prefix('story')->middleware(['api', 'auth:api'])->group(function () {
+    Route::get('/chapters', [UploadController::class, 'index']);
+    Route::middleware('admin')->group(function () {
+        Route::post('/chapters', [UploadController::class, 'createChapter']);
+        Route::delete('/chapters/{id}', [UploadController::class, 'destroy']);
+    });
+});

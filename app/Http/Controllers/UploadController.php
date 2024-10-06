@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
+use App\Models\Chapter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use App\Models\User;
 use Intervention\Image\ImageManagerStatic as Image;
 
 class UploadController extends Controller
@@ -91,9 +92,6 @@ class UploadController extends Controller
             return response()->json(['error' => 'Lỗi khi cập nhật vị trí cover: ' . $e->getMessage()], 500);
         }
     }
-
-
-
      public function deleteAvatar($id)
     {
         $user = User::findOrFail($id);
@@ -117,5 +115,40 @@ class UploadController extends Controller
             return response()->json(['message' => 'Cover deleted successfully']);
         }
         return response()->json(['message' => 'No cover to delete'], 404);
+    }
+
+    // admin
+    public function createChapter(Request $request)
+    {
+        $request->validate([
+            'chapter_number' => 'required|integer',
+            'title' => 'required|string',
+            'author' => 'required|string',
+            'content' => 'required|array', 
+        ]);
+        $fullContent = implode("\n\n", $request->input('content'));
+        $filename = 'chapter-' . $request->input('chapter_number') . '.txt';
+        $path = 'stories/' . $filename;
+        Storage::put($path, $fullContent);
+        $chapter = Chapter::create([
+            'title' => $request->input('title'),
+            'author' => $request->input('author'),
+            'chapter_number' => $request->input('chapter_number'),
+            'file_path' => $path, 
+        ]);
+        return response()->json($chapter, 201);
+    }
+    public function index()
+    {
+        return Chapter::all();
+    }
+    public function destroy($id)
+    {
+        $chapter = Chapter::findOrFail($id);
+        if ($chapter->file_path) {
+            Storage::delete($chapter->file_path); 
+        }
+        $chapter->delete();
+        return response()->json(null, 204);
     }
 }
