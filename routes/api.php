@@ -78,7 +78,9 @@ Route::group([
 
 Route::prefix('story')->middleware(['api', 'auth:api'])->group(function () {
     Route::get('/chapters', [UploadController::class, 'index']);
+    Route::get('/chapters/{id}', [UploadController::class, 'getChapter']);
     Route::middleware('admin')->group(function () {
+        Route::put('/chapters/{id}', [UploadController::class, 'updateChapter']);
         Route::post('/chapters', [UploadController::class, 'createChapter']);
         Route::delete('/chapters/{id}', [UploadController::class, 'destroy']);
     });

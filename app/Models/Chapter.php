@@ -2,19 +2,24 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Chapter extends Model
 {
-    use HasFactory;
+    protected $fillable = ['title', 'story_name', 'author', 'chapter_number', 'file_path'];
 
-    protected $table = 'chapters';
+    protected static function boot()
+    {
+        parent::boot();
 
-    protected $fillable = [
-        'title',
-        'author',
-        'chapter_number',
-        'file_path', 
-    ];
+        static::creating(function ($chapter) {
+            if (empty($chapter->story_name)) {
+                $chapter->story_name = 'THẤT SẮC CHI ĐẠO';
+            }
+
+            if (empty($chapter->author)) {
+                $chapter->author = 'Hoanganh Pham';
+            }
+        });
+    }
 }
