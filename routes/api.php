@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\StoryController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ProfileController;
@@ -35,6 +36,9 @@ Route::group([
     Route::get('/contact', [CompanyInfoController::class, 'getInfo']);
     Route::post('/contact', [ContactController::class, 'store']);
     Route::get('/contacts', [ContactController::class, 'index']);
+    Route::delete('/contacts/{id}', [ContactController::class, 'destroy']);
+    Route::post('/reply-email', [ContactController::class, 'reply']);
+
 
 });
 
@@ -79,9 +83,17 @@ Route::group([
 Route::prefix('story')->middleware(['api', 'auth:api'])->group(function () {
     Route::get('/chapters', [UploadController::class, 'index']);
     Route::get('/chapters/{id}', [UploadController::class, 'getChapter']);
+    Route::get('/backgrounds', [StoryController::class, 'getBackgrounds'])->name('backgrounds.get');
+    Route::get('/backgrounds/{id}', [StoryController::class, 'getImage']);
+    Route::post('/save-settings', [StoryController::class, 'saveSettings'])->name('settings.save');
+    Route::get('/{user_id}/settings', [StoryController::class, 'getSettings'])->name('settings.get');
+    Route::put('/settings', [StoryController::class, 'updateSettings'])->name('settings.update');
     Route::middleware('admin')->group(function () {
+        Route::post('/upload-background', [StoryController::class, 'uploadBackground'])->name('admin.upload-background');
         Route::put('/chapters/{id}', [UploadController::class, 'updateChapter']);
         Route::post('/chapters', [UploadController::class, 'createChapter']);
         Route::delete('/chapters/{id}', [UploadController::class, 'destroy']);
+        Route::put('/backgrounds/{id}', [StoryController::class, 'updateBackground'])->name('backgrounds.update');
+        Route::delete('/backgrounds/{id}', [StoryController::class, 'deleteBackground'])->name('backgrounds.delete');
     });
 });

@@ -41,7 +41,7 @@ class ContactController extends Controller
     private function sendContactEmail($data)
     {
         Mail::send([], [], function ($message) use ($data) {
-            $message->to('selorson.tcv@gmail.com') 
+            $message->to('selorsontales@gmail.com') 
                 ->subject($data['title']) 
                 ->html('
                     <h2>Thông tin liên hệ</h2>
@@ -69,5 +69,58 @@ class ContactController extends Controller
         $contacts = $query->get();
 
         return response()->json($contacts);
+    }
+        public function destroy($id)
+        {
+            $contact = Contact::find($id);
+
+            if (!$contact) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Liên hệ không tồn tại!'
+                ], 404);
+            }
+
+            $contact->delete();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Liên hệ đã được xóa thành công!'
+            ], 200);
+        }
+
+            public function reply(Request $request)
+    {
+        // Kiểm tra dữ liệu đầu vào
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|max:255',
+            'message' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'errors' => $validator->errors()
+            ], 400);
+        }
+
+        // Gửi email phản hồi
+        try {
+            Mail::send([], [], function ($message) use ($request) {
+                $message->to($request->email) 
+                    ->subject('Phản hồi liên hệ từ Selorson Tales') 
+                    ->html(nl2br($request->message)); 
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Phản hồi đã được gửi thành công!'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gửi email thất bại!',
+            ], 500);
+        }
     }
 }
