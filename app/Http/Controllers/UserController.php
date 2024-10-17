@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\RequestLog;
 use Illuminate\Http\Request;
 use App\Models\BlacklistedIp;
 use App\Models\DeviceManager;
@@ -212,26 +213,104 @@ public function index()
             ]);
         }
 
-    public function transferToBlacklist($userId)
+   public function transferToBlacklist(Request $request, $userId)
+    {
+        // Kiểm tra nếu có thông tin thiết bị
+        $deviceManager = DeviceManager::where('user_id', $userId)->first();
+        if (!$deviceManager) {
+            return response()->json(['message' => 'Không tìm thấy thông tin thiết bị.'], 404);
+        }
+
+        // Kiểm tra nếu đã có trong blacklist
+        $existingBlacklist = BlacklistedIp::where('user_id', $deviceManager->user_id)
+                                        ->where('ip_address', $deviceManager->ip_address)
+                                        ->where('user_agent', $deviceManager->user_agent)
+                                        ->first();
+        if ($existingBlacklist) {
+            return response()->json(['message' => 'Thông tin đã có trong blacklist.'], 400);
+        }
+
+        // Lưu vào blacklist với lý do từ request
+        $reason = $request->input('reason', 'Người dùng vi phạm chính sách.');
+        
+        BlacklistedIp::create([
+            'user_id' => $deviceManager->user_id,
+            'ip_address' => $deviceManager->ip_address,
+            'user_agent' => $deviceManager->user_agent,
+            'reason' => $reason,
+        ]);
+
+        // Xóa thông tin thiết bị
+        $deviceManager->delete();
+
+        return response()->json(['message' => 'Thông tin đã được chuyển vào blacklist.']);
+    }
+    public function deleteFromBlacklist($id)
         {
-            $deviceManager = DeviceManager::where('user_id', $userId)->first();
-            if (!$deviceManager) {
-                return response()->json(['message' => 'Không tìm thấy thông tin thiết bị.'], 404);
+            $blacklist = BlacklistedIp::find($id);
+            if (!$blacklist) {
+                return response()->json(['message' => 'Không tìm thấy mục trong blacklist.'], 404);
             }
-            $existingBlacklist = BlacklistedIp::where('user_id', $deviceManager->user_id)
-                                                ->where('ip_address', $deviceManager->ip_address)
-                                                ->where('user_agent', $deviceManager->user_agent)
+
+            $blacklist->delete();
+            return response()->json(['message' => 'Xóa blacklist thành công.'], 204);
+        }
+
+        public function getAllRequestLogs()
+        {
+            $requestLogs = RequestLog::all();
+            return response()->json(['request_logs' => $requestLogs]);
+        }
+
+        // Xóa một request log theo ID
+        public function deleteRequestLog($id)
+        {
+            $requestLog = RequestLog::find($id);
+            
+            if (!$requestLog) {
+                return response()->json(['message' => 'Không tìm thấy bản ghi.'], 404);
+            }
+
+            $requestLog->delete();
+            return response()->json(['message' => 'Xóa bản ghi thành công.']);
+        }
+
+        // Xóa tất cả request logs
+        public function deleteAllRequestLogs()
+        {
+            RequestLog::truncate();
+            return response()->json(['message' => 'Đã xóa tất cả bản ghi.']);
+        }
+
+        public function transferToBlacklistFromRequestLog(Request $request, $id)
+        {
+            $requestLog = RequestLog::find($id);
+
+            if (!$requestLog) {
+                return response()->json(['message' => 'Không tìm thấy bản ghi request log.'], 404);
+            }
+
+            // Kiểm tra xem IP và User-Agent đã có trong blacklist chưa
+            $existingBlacklist = BlacklistedIp::where('ip_address', $requestLog->ip_address)
+                                                ->where('user_agent', $requestLog->user_agent)
                                                 ->first();
+            
             if ($existingBlacklist) {
                 return response()->json(['message' => 'Thông tin đã có trong blacklist.'], 400);
             }
+
+            // Thêm vào blacklist với lý do mặc định
             BlacklistedIp::create([
-                'user_id' => $deviceManager->user_id,
-                'ip_address' => $deviceManager->ip_address,
-                'user_agent' => $deviceManager->user_agent,
-                'reason' => 'Người dùng vi phạm chính sách.',
+                'user_id' => null, // Có thể để null nếu không có user_id liên quan
+                'ip_address' => $requestLog->ip_address,
+                'user_agent' => $requestLog->user_agent,
+                'reason' => 'Gọi nhiều request nghi ngờ hacker xâm nhập.',
             ]);
-            $deviceManager->delete();
-            return response()->json(['message' => 'Thông tin đã được chuyển vào blacklist.']);
+
+            // Xóa thông tin trong bảng request_logs sau khi chuyển
+            $requestLog->delete();
+
+            return response()->json(['message' => 'Thông tin đã được chuyển vào blacklist và xóa khỏi request logs.']);
         }
+
 }

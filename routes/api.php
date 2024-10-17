@@ -56,6 +56,11 @@ Route::group([
     Route::get('/device-info', [UserController::class, 'getAllDeviceInfo'])->name('users.deviceInfo');
     Route::get('/blacklist', [UserController::class, 'getAllBlacklist'])->name('users.blacklist');
     Route::post('/transfer-to-blacklist/{userId}', [UserController::class, 'transferToBlacklist'])->name('users.transferToBlacklist');
+    Route::delete('/blacklist/{id}', [UserController::class, 'deleteFromBlacklist'])->name('users.deleteFromBlacklist');
+    Route::get('/request-logs', [UserController::class, 'getAllRequestLogs'])->name('users.requestLogs');
+    Route::delete('/request-log/{id}', [UserController::class, 'deleteRequestLog'])->name('users.deleteRequestLog');
+    Route::delete('/request-logs', [UserController::class, 'deleteAllRequestLogs'])->name('users.deleteAllRequestLogs');
+    Route::post('/transfer-from-request-log/{id}', [UserController::class, 'transferToBlacklistFromRequestLog'])->name('users.transferFromRequestLog');
 });
 
 
