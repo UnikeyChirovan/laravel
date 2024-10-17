@@ -104,7 +104,6 @@ class UploadController extends Controller
         return response()->json(['message' => 'No avatar to delete'], 404);
     }
 
-    // Xóa cover
     public function deleteCover($id)
     {
         $user = User::findOrFail($id);
@@ -150,38 +149,26 @@ class UploadController extends Controller
 
     public function updateChapter(Request $request, $id)
     {
-        // Xác thực dữ liệu yêu cầu
         $request->validate([
             'chapter_number' => 'required|integer',
             'title' => 'required|string',
             'author' => 'required|string',
             'content' => 'required|array',
         ]);
-
-        // Tìm chương cần chỉnh sửa theo ID
         $chapter = Chapter::findOrFail($id);
-
-        // Cập nhật nội dung chương
         $fullContent = implode("\n\n", $request->input('content'));
         $filename = 'chapter-' . $request->input('chapter_number') . '.txt';
         $path = 'stories/' . $filename;
-
-        // Kiểm tra nếu tên file đã thay đổi, xóa file cũ
         if ($chapter->file_path !== $path) {
             Storage::delete($chapter->file_path);
         }
-
-        // Cập nhật nội dung file hoặc tạo mới nếu tên file đã thay đổi
         Storage::put($path, $fullContent);
-
-        // Cập nhật thông tin chương trong database
         $chapter->update([
             'title' => $request->input('title'),
             'author' => $request->input('author'),
             'chapter_number' => $request->input('chapter_number'),
             'file_path' => $path,
         ]);
-
         return response()->json($chapter, 200);
     }
 

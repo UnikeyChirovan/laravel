@@ -11,7 +11,7 @@ class BlacklistedIp extends Model
 
     protected $fillable = [
         'ip_address',
-        'user_agent', // Add user_agent to fillable fields
+        'user_agent',
         'reason',
     ];
 }

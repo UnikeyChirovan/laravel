@@ -13,27 +13,20 @@ class StoryController extends Controller
     public function uploadBackground(Request $request)
     {
         $request->validate([
-            'background_images' => 'required|array|max:10', // Chỉ chấp nhận tối đa 10 ảnh
-            'background_images.*' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // Tất cả các file đều phải là hình ảnh
-            'background_names' => 'required|array', // Mảng tên cho các ảnh
-            'background_names.*' => 'required|string|max:255', // Mỗi tên phải là chuỗi, tối đa 255 ký tự
+            'background_images' => 'required|array|max:10', 
+            'background_images.*' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', 
+            'background_names' => 'required|array', 
+            'background_names.*' => 'required|string|max:255',
         ]);
 
         $backgrounds = [];
         foreach ($request->file('background_images') as $index => $file) {
-            // Lưu file vào thư mục public/background
             $path = $file->store('background', 'public');
-            
-            // Lấy tên tương ứng từ mảng 'background_names'
             $backgroundName = $request->background_names[$index];
-
-            // Tạo record trong database
             $background = BackgroundStory::create([
                 'background_image_name' => $backgroundName,
                 'background_image_path' => $path,
             ]);
-            
-            // Lưu lại từng background đã upload
             $backgrounds[] = $background;
         }
 
@@ -76,14 +69,13 @@ class StoryController extends Controller
     public function deleteBackground($id)
     {
         $background = BackgroundStory::findOrFail($id);
-        Storage::delete('public/' . $background->background_image_path); // Xóa file ảnh khỏi storage
+        Storage::delete('public/' . $background->background_image_path); 
         $background->delete();
 
         return response()->json([
             'message' => 'Xóa hình nền thành công!'
         ], 204);
     }
-
     public function saveSettings(Request $request)
     {
         $request->validate([
@@ -150,8 +142,6 @@ class StoryController extends Controller
         if (!$settings) {
             return response()->json(['error' => 'Cài đặt không tồn tại cho người dùng này.'], 404);
         }
-
-        // Cập nhật từng trường nếu có giá trị trong request
         $settings->update([
             'background_story_id' => $request->background_story_id ?? $settings->background_story_id,
             'font_family' => $request->font_family ?? $settings->font_family,

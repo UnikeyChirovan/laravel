@@ -24,12 +24,6 @@ class UserController extends Controller
         }
 public function index()
 {
-    // Ghi lại thời gian bắt đầu
-    Log::info('Starting user fetch process.');
-
-    // Thời gian bắt đầu
-    $startTime = microtime(true);
-
     $users = User::where("users.id", "!=", "1")
         ->join('departments', 'users.department_id', '=', 'departments.id')
         ->join('users_status', 'users.status_id', '=', 'users_status.id')
@@ -39,13 +33,6 @@ public function index()
             'users_status.name as status'
         )
         ->get();
-
-    // Ghi lại thời gian kết thúc
-    $endTime = microtime(true);
-    $executionTime = $endTime - $startTime;
-
-    // Ghi log thời gian thực hiện
-    Log::info('User fetch process completed. Execution time: ' . $executionTime . ' seconds.');
 
     return response()->json($users);
 }
@@ -215,13 +202,10 @@ public function index()
 
    public function transferToBlacklist(Request $request, $userId)
     {
-        // Kiểm tra nếu có thông tin thiết bị
         $deviceManager = DeviceManager::where('user_id', $userId)->first();
         if (!$deviceManager) {
             return response()->json(['message' => 'Không tìm thấy thông tin thiết bị.'], 404);
         }
-
-        // Kiểm tra nếu đã có trong blacklist
         $existingBlacklist = BlacklistedIp::where('user_id', $deviceManager->user_id)
                                         ->where('ip_address', $deviceManager->ip_address)
                                         ->where('user_agent', $deviceManager->user_agent)
@@ -229,8 +213,6 @@ public function index()
         if ($existingBlacklist) {
             return response()->json(['message' => 'Thông tin đã có trong blacklist.'], 400);
         }
-
-        // Lưu vào blacklist với lý do từ request
         $reason = $request->input('reason', 'Người dùng vi phạm chính sách.');
         
         BlacklistedIp::create([
@@ -239,8 +221,6 @@ public function index()
             'user_agent' => $deviceManager->user_agent,
             'reason' => $reason,
         ]);
-
-        // Xóa thông tin thiết bị
         $deviceManager->delete();
 
         return response()->json(['message' => 'Thông tin đã được chuyển vào blacklist.']);
@@ -261,8 +241,6 @@ public function index()
             $requestLogs = RequestLog::all();
             return response()->json(['request_logs' => $requestLogs]);
         }
-
-        // Xóa một request log theo ID
         public function deleteRequestLog($id)
         {
             $requestLog = RequestLog::find($id);
@@ -275,7 +253,6 @@ public function index()
             return response()->json(['message' => 'Xóa bản ghi thành công.']);
         }
 
-        // Xóa tất cả request logs
         public function deleteAllRequestLogs()
         {
             RequestLog::truncate();
@@ -289,8 +266,6 @@ public function index()
             if (!$requestLog) {
                 return response()->json(['message' => 'Không tìm thấy bản ghi request log.'], 404);
             }
-
-            // Kiểm tra xem IP và User-Agent đã có trong blacklist chưa
             $existingBlacklist = BlacklistedIp::where('ip_address', $requestLog->ip_address)
                                                 ->where('user_agent', $requestLog->user_agent)
                                                 ->first();
@@ -298,16 +273,12 @@ public function index()
             if ($existingBlacklist) {
                 return response()->json(['message' => 'Thông tin đã có trong blacklist.'], 400);
             }
-
-            // Thêm vào blacklist với lý do mặc định
             BlacklistedIp::create([
-                'user_id' => null, // Có thể để null nếu không có user_id liên quan
+                'user_id' => null, 
                 'ip_address' => $requestLog->ip_address,
                 'user_agent' => $requestLog->user_agent,
                 'reason' => 'Gọi nhiều request nghi ngờ hacker xâm nhập.',
             ]);
-
-            // Xóa thông tin trong bảng request_logs sau khi chuyển
             $requestLog->delete();
 
             return response()->json(['message' => 'Thông tin đã được chuyển vào blacklist và xóa khỏi request logs.']);

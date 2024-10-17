@@ -19,7 +19,6 @@ return new class extends Migration
             $table->text('reason')->nullable();
             $table->timestamps();
 
-            // Thiết lập khóa ngoại
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
     }

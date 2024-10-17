@@ -15,6 +15,6 @@ class Contact extends Model
         'email',
         'title',
         'message',
-        'contacted_at', // Thêm vào đây
+        'contacted_at',
     ];
 }
