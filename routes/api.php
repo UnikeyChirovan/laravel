@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\VoteController;
 use App\Http\Controllers\StoryController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\ContactController;
@@ -107,3 +108,14 @@ Route::prefix('story')->middleware(['api', 'auth:api'])->group(function () {
         Route::delete('/backgrounds/{id}', [StoryController::class, 'deleteBackground'])->name('backgrounds.delete');
     });
 });
+
+Route::group([
+    'prefix' => 'vote',
+    'middleware' => ['api', 'blacklist', 'throttle.requests'],
+], function () {
+    Route::post('/createOrUpdate', [VoteController::class, 'createOrUpdateVote'])->middleware('auth:api'); // Tạo hoặc cập nhật vote
+    Route::get('/getUserVote', [VoteController::class, 'getUserVote'])->middleware('auth:api'); // Lấy kết quả vote của người dùng
+    Route::get('/results', [VoteController::class, 'getVoteResults']);
+});
+
+
