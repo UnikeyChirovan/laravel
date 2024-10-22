@@ -9,8 +9,11 @@ use App\Http\Controllers\StoryController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\CompanyInfoController;
 use App\Http\Controllers\UserChapterController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\UserNotificationController;
 
 
 Route::options('/{any}', function (Request $request) {
@@ -113,9 +116,27 @@ Route::group([
     'prefix' => 'vote',
     'middleware' => ['api', 'blacklist', 'throttle.requests'],
 ], function () {
-    Route::post('/createOrUpdate', [VoteController::class, 'createOrUpdateVote'])->middleware('auth:api'); // Tạo hoặc cập nhật vote
-    Route::get('/getUserVote', [VoteController::class, 'getUserVote'])->middleware('auth:api'); // Lấy kết quả vote của người dùng
+    Route::post('/createOrUpdate', [VoteController::class, 'createOrUpdateVote'])->middleware('auth:api');
+    Route::get('/getUserVote', [VoteController::class, 'getUserVote'])->middleware('auth:api'); 
     Route::get('/results', [VoteController::class, 'getVoteResults']);
 });
 
-
+Route::prefix('newsletter')->middleware(['api','blacklist', 'throttle.requests'])->group(function () {
+    Route::post('/subscribe', [NewsletterController::class, 'subscribe']);
+    Route::get('/unsubscribe', [NewsletterController::class, 'unsubscribe']);
+    Route::middleware('admin')->group(function () {
+    Route::post('/notifications/create', [NotificationController::class, 'create']);
+    Route::get('/notifications', [NotificationController::class, 'getAll']);
+    Route::delete('/notifications/{id}', [NotificationController::class, 'delete']);
+    });
+});
+Route::group([
+    'prefix' => 'user-notifications',
+    'middleware' => ['api', 'auth:api', 'throttle.requests'],
+], function () {
+    Route::get('/', [UserNotificationController::class, 'index']);
+    Route::post('/', [UserNotificationController::class, 'store'])->middleware('admin');
+    Route::get('/{id}', [UserNotificationController::class, 'show']);
+    Route::put('/{id}/text', [UserNotificationController::class, 'updateText'])->middleware('admin');
+    Route::delete('/{id}', [UserNotificationController::class, 'destroy'])->middleware('admin');
+});
