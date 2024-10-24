@@ -9,9 +9,12 @@ use App\Http\Controllers\StoryController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SectionController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\CompanyInfoController;
 use App\Http\Controllers\UserChapterController;
+use App\Http\Controllers\ImageManagerController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\UserNotificationController;
 
@@ -139,4 +142,34 @@ Route::group([
     Route::get('/{id}', [UserNotificationController::class, 'show']);
     Route::put('/{id}/text', [UserNotificationController::class, 'updateText'])->middleware('admin');
     Route::delete('/{id}', [UserNotificationController::class, 'destroy'])->middleware('admin');
+});
+Route::group([
+    'prefix' => 'image-manager',
+    'middleware' => [ 'throttle.requests'],
+], function () {
+    Route::post('/upload', [ImageManagerController::class, 'uploadImage'])->middleware('admin');
+    Route::get('/', [ImageManagerController::class, 'getImages']);
+    Route::get('/{id}', [ImageManagerController::class, 'getImage']);
+    Route::put('/{id}', [ImageManagerController::class, 'updateImage'])->middleware('admin');
+    Route::delete('/{id}', [ImageManagerController::class, 'deleteImage'])->middleware('admin');
+});
+Route::group([
+    'prefix' => 'sections',
+    'middleware' => [ 'throttle.requests'],
+], function () {
+    Route::get('/', [SectionController::class, 'index']); 
+    Route::post('/', [SectionController::class, 'createSection'])->middleware('admin');
+    Route::get('/{id}', [SectionController::class, 'getSection']); 
+    Route::put('/{id}', [SectionController::class, 'updateSection'])->middleware('admin');
+    Route::delete('/{id}', [SectionController::class, 'destroy'])->middleware('admin');
+});
+Route::group([
+    'prefix' => 'categories',
+    'middleware' => [ 'throttle.requests'],
+], function () {
+    Route::get('/', [CategoryController::class, 'index']);
+    Route::get('/{id}', [CategoryController::class, 'show']);
+    Route::post('/', [CategoryController::class, 'store'])->middleware('admin');
+    Route::put('/{id}', [CategoryController::class, 'update'])->middleware('admin');
+    Route::delete('/{id}', [CategoryController::class, 'destroy'])->middleware('admin');
 });
