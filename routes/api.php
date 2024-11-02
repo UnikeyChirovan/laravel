@@ -8,14 +8,17 @@ use App\Http\Controllers\VoteController;
 use App\Http\Controllers\StoryController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\FeatureController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SectionController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\HeroSlideController;
 use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\CompanyInfoController;
 use App\Http\Controllers\UserChapterController;
 use App\Http\Controllers\ImageManagerController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\FutureProjectController;
 use App\Http\Controllers\UserNotificationController;
 
 
@@ -41,7 +44,6 @@ Route::group([
     'prefix' => 'noauth',
     'middleware' => ['api', 'throttle.requests'],
 ], function () {
-    Route::get('/contact', [CompanyInfoController::class, 'getInfo']);
     Route::post('/contact', [ContactController::class, 'store']);
     Route::get('/contacts', [ContactController::class, 'index']);
     Route::delete('/contacts/{id}', [ContactController::class, 'destroy']);
@@ -135,8 +137,9 @@ Route::prefix('newsletter')->middleware(['api','blacklist', 'throttle.requests']
 });
 Route::group([
     'prefix' => 'user-notifications',
-    'middleware' => ['api', 'auth:api', 'throttle.requests'],
+    'middleware' => ['throttle.requests'],
 ], function () {
+    Route::get('/page-options', [UserNotificationController::class, 'getPageOptions']);
     Route::get('/', [UserNotificationController::class, 'index']);
     Route::post('/', [UserNotificationController::class, 'store'])->middleware('admin');
     Route::get('/{id}', [UserNotificationController::class, 'show']);
@@ -154,6 +157,27 @@ Route::group([
     Route::delete('/{id}', [ImageManagerController::class, 'deleteImage'])->middleware('admin');
 });
 Route::group([
+    'prefix' => 'categories',
+    'middleware' => [ 'throttle.requests'],
+], function () {
+    Route::get('/page-options', [CategoryController::class, 'getPageOptions']);
+    Route::get('/', [CategoryController::class, 'index']);
+    Route::get('/{id}', [CategoryController::class, 'show']);
+    Route::post('/', [CategoryController::class, 'store'])->middleware('admin');
+    Route::put('/{id}', [CategoryController::class, 'update'])->middleware('admin');
+    Route::delete('/{id}', [CategoryController::class, 'destroy'])->middleware('admin');
+});
+Route::group([
+    'middleware' => [ 'throttle.requests'],
+], function () {
+    Route::get('/company-info', [CompanyInfoController::class, 'index']);
+    Route::get('/company-info/{id}', [CompanyInfoController::class, 'show'])->middleware('admin');
+    Route::post('/company-info', [CompanyInfoController::class, 'store'])->middleware('admin');
+    Route::put('/company-info/{id}', [CompanyInfoController::class, 'update'])->middleware('admin');
+    Route::delete('/company-info/{id}', [CompanyInfoController::class, 'destroy'])->middleware('admin');
+});
+
+Route::group([
     'prefix' => 'sections',
     'middleware' => [ 'throttle.requests'],
 ], function () {
@@ -163,13 +187,38 @@ Route::group([
     Route::put('/{id}', [SectionController::class, 'updateSection'])->middleware('admin');
     Route::delete('/{id}', [SectionController::class, 'destroy'])->middleware('admin');
 });
+
 Route::group([
-    'prefix' => 'categories',
-    'middleware' => [ 'throttle.requests'],
+    'prefix' => 'hero-slides',
+    'middleware' => ['throttle.requests'],
 ], function () {
-    Route::get('/', [CategoryController::class, 'index']);
-    Route::get('/{id}', [CategoryController::class, 'show']);
-    Route::post('/', [CategoryController::class, 'store'])->middleware('admin');
-    Route::put('/{id}', [CategoryController::class, 'update'])->middleware('admin');
-    Route::delete('/{id}', [CategoryController::class, 'destroy'])->middleware('admin');
+    Route::get('/', [HeroSlideController::class, 'index']);
+    Route::get('/{id}', [HeroSlideController::class, 'show']);
+    Route::post('/', [HeroSlideController::class, 'store'])->middleware('admin');
+    Route::put('/{id}', [HeroSlideController::class, 'update'])->middleware('admin');
+    Route::delete('/{id}', [HeroSlideController::class, 'destroy'])->middleware('admin');
+});
+
+
+Route::group([
+    'prefix' => 'future-projects',
+    'middleware' => ['throttle.requests'],
+], function () {
+    Route::get('/', [FutureProjectController::class, 'index']);
+    Route::get('/{id}', [FutureProjectController::class, 'show']);
+    Route::post('/', [FutureProjectController::class, 'store'])->middleware('admin');
+    Route::put('/{id}', [FutureProjectController::class, 'update'])->middleware('admin');
+    Route::delete('/{id}', [FutureProjectController::class, 'destroy'])->middleware('admin');
+});
+
+
+Route::group([
+    'prefix' => 'features',
+    'middleware' => ['throttle.requests'],
+], function () {
+    Route::get('/', [FeatureController::class, 'index']);
+    Route::get('/{id}', [FeatureController::class, 'show']);
+    Route::post('/', [FeatureController::class, 'store'])->middleware('admin');
+    Route::put('/{id}', [FeatureController::class, 'update'])->middleware('admin');
+    Route::delete('/{id}', [FeatureController::class, 'destroy'])->middleware('admin');
 });

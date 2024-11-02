@@ -65,15 +65,21 @@ class VoteController extends Controller {
         }
         return response()->json(['vote' => $vote], 200);
     }
-    public function getVoteResults() {
+    public function getVoteResults()
+    {
         $results = Vote::select('choice', DB::raw('count(*) as total'))
-                    ->groupBy('choice')
-                    ->get();
+                        ->groupBy('choice')
+                        ->get();
+                        
         $totalVotes = Vote::distinct('user_id')->count('user_id');
+        $lastUpdated = Vote::max('updated_at'); // Lấy thời gian cập nhật cuối cùng
+
         $formattedResults = [
-        'total_users_voted' => $totalVotes,
-        'votes_by_choice' => $results
+            'total_users_voted' => $totalVotes,
+            'votes_by_choice' => $results,
+            'last_updated' => $lastUpdated, // Thêm timestamp vào dữ liệu trả về
         ];
+
         return response()->json($formattedResults, 200);
     }
 }

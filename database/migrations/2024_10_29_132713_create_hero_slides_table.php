@@ -11,14 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('categories', function (Blueprint $table) {
+        Schema::create('hero_slides', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('code')->unique();
-            $table->enum('page', ['home', 'about', 'contact', 'maps', 'footer']); 
+            $table->string('image_url')->nullable();
+            $table->string('round')->nullable();
+            $table->string('title');
+            $table->text('description');
+            $table->string('button_text');
             $table->timestamps();
         });
-
     }
 
     /**
@@ -26,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('categories');
+        Schema::dropIfExists('hero_slides');
     }
 };

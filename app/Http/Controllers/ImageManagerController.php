@@ -34,11 +34,17 @@ class ImageManagerController extends Controller
         ], 201);
     }
 
-    public function getImages()
-    {
-        $images = ImageManager::all();
-        return response()->json($images, 200);
-    }
+public function getImages()
+{
+    $images = ImageManager::all();
+    $lastUpdated = ImageManager::max('updated_at'); // Lấy thời gian cập nhật cuối cùng
+
+    return response()->json([
+        'images' => $images,
+        'last_updated' => $lastUpdated,
+    ], 200);
+}
+
 
     public function getImage($id)
     {

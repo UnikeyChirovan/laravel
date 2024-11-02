@@ -90,8 +90,24 @@ class SectionController extends Controller
 
     public function index()
     {
-        return Section::all();
+        $sections = Section::all();
+        $lastUpdated = Section::max('updated_at'); 
+
+        foreach ($sections as $section) {
+            if (Storage::exists($section->file_path)) {
+                $content = Storage::get($section->file_path);
+                $section->content = explode("\n\n", $content); 
+            } else {
+                $section->content = []; 
+            }
+        }
+
+        return response()->json([
+            'sections' => $sections,
+            'last_updated' => $lastUpdated,
+        ]);
     }
+
 
     public function destroy($id)
     {

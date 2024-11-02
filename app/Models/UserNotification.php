@@ -9,7 +9,7 @@ class UserNotification extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['title', 'content_path', 'image_paths'];
+    protected $fillable = ['title', 'content_path', 'image_paths', 'page'];
 
     // Chuyển đổi cột image_paths từ dạng JSON thành array khi thao tác
     protected $casts = [
