@@ -103,9 +103,7 @@ Route::prefix('story')->middleware(['api', 'auth:api'])->group(function () {
     Route::post('/save-settings', [StoryController::class, 'saveSettings'])->name('settings.save');
     Route::get('/{user_id}/settings', [StoryController::class, 'getSettings'])->name('settings.get');
     Route::put('/settings', [StoryController::class, 'updateSettings'])->name('settings.update');
-
-    Route::post('/user-chapter', [UserChapterController::class, 'storeCurrentChapter']); 
-    Route::put('/user-chapter', [UserChapterController::class, 'updateCurrentChapter']);
+    Route::post('/user-chapter', [UserChapterController::class, 'saveOrUpdateCurrentChapter']); 
     Route::get('/user-chapter', [UserChapterController::class, 'getLastReadChapter']); 
     Route::middleware('admin')->group(function () {
         Route::post('/upload-background', [StoryController::class, 'uploadBackground'])->name('admin.upload-background');

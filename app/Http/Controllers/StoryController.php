@@ -115,8 +115,7 @@ class StoryController extends Controller
 
         if ($settings) {
             return response()->json([
-                'settings' => $settings,
-                'hasSettings' => $settings->hasSettings  
+                'settings' => $settings 
             ], 200);
         }
         return response()->json(['error' => 'Không tìm thấy cài đặt cho người dùng này.'], 404);

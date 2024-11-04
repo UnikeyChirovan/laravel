@@ -9,7 +9,7 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 
 class UserChapterController extends Controller
 {
-public function storeCurrentChapter(Request $request)
+public function saveOrUpdateCurrentChapter(Request $request)
 {
     $user = JWTAuth::parseToken()->authenticate();
 
@@ -17,34 +17,18 @@ public function storeCurrentChapter(Request $request)
         'chapter_id' => 'required|exists:chapters,id',
     ]);
 
-    $existingRecord = UserChapter::where('user_id', $user->id)
-        ->where('chapter_id', $request->chapter_id)
-        ->first();
-
-    if ($existingRecord) {
-        return response()->json([
-            'message' => 'Chương này đã được lưu trước đó.'
-        ], 200);
-    }
-
-    $userChapter = UserChapter::create([
-        'user_id' => $user->id,
-        'chapter_id' => $request->chapter_id,
-    ]);
-
-    return response()->json($userChapter, 201);
-}
-public function updateCurrentChapter(Request $request)
-{
-    $user = JWTAuth::parseToken()->authenticate();
-
-    $request->validate([
-        'chapter_id' => 'required|exists:chapters,id',
-    ]);
-
+    // Tìm kiếm bản ghi theo user_id
     $userChapter = UserChapter::where('user_id', $user->id)->first();
 
     if ($userChapter) {
+        // Nếu đã tồn tại bản ghi và chapter_id trùng với giá trị mới, không cần cập nhật
+        if ($userChapter->chapter_id == $request->chapter_id) {
+            return response()->json([
+                'message' => 'Chương đã được cập nhật trước đó.'
+            ], 200);
+        }
+        
+        // Nếu chapter_id khác, thì cập nhật giá trị mới
         $userChapter->chapter_id = $request->chapter_id;
         $userChapter->save();
 
@@ -52,12 +36,21 @@ public function updateCurrentChapter(Request $request)
             'message' => 'Cập nhật chương thành công.',
             'data' => $userChapter
         ], 200);
-    }
+    } else {
+        // Nếu chưa có bản ghi, tạo mới
+        $userChapter = UserChapter::create([
+            'user_id' => $user->id,
+            'chapter_id' => $request->chapter_id,
+        ]);
 
-    return response()->json([
-        'message' => 'Người dùng chưa có chương nào được lưu trước đó.'
-    ], 404);
+        return response()->json([
+            'message' => 'Lưu chương mới thành công.',
+            'data' => $userChapter
+        ], 201);
+    }
 }
+
+
 public function getLastReadChapter()
 {
     $user = JWTAuth::parseToken()->authenticate();
@@ -65,9 +58,11 @@ public function getLastReadChapter()
     $userChapter = UserChapter::where('user_id', $user->id)->latest()->first();
 
     if ($userChapter) {
-        $chapter = Chapter::find($userChapter->chapter_id);
-        return response()->json($chapter, 200);
+        return response()->json([
+            'chapter_id' => $userChapter->chapter_id
+        ], 200);
     }
+    
     return response()->json([
         'message' => 'Người dùng chưa đọc chương nào.'
     ], 404);
