@@ -9,8 +9,10 @@ use Illuminate\Support\Facades\DB;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Auth;
 
-class VoteController extends Controller {
-    public function createOrUpdateVote(Request $request) {
+class VoteController extends Controller 
+{
+    public function createOrUpdateVote(Request $request) 
+    {
         try {
             $user = JWTAuth::parseToken()->authenticate(); 
         } catch (\Exception $e) {
@@ -29,7 +31,7 @@ class VoteController extends Controller {
                 $votedAt = Carbon::parse($lastVote->voted_at);
                 if ($votedAt->diffInDays($now) < 7) {
                     DB::rollBack(); 
-                    return response()->json(['message' => 'Bạn chỉ có thể thay đổi vote sau 7 ngày'], 409); // Sử dụng mã 409 cho "Conflict"
+                    return response()->json(['message' => 'Bạn chỉ có thể thay đổi vote sau 7 ngày'], 409); 
                 }
                 $lastVote->update([
                     'choice' => $request->choice,
@@ -52,7 +54,8 @@ class VoteController extends Controller {
             return response()->json(['message' => 'Đã xảy ra lỗi, vui lòng thử lại'], 500);
         }
     }
-    public function getUserVote(Request $request) {
+    public function getUserVote(Request $request) 
+    {
         try {
             $user = JWTAuth::parseToken()->authenticate(); 
         } catch (\Exception $e) {
@@ -72,12 +75,12 @@ class VoteController extends Controller {
                         ->get();
                         
         $totalVotes = Vote::distinct('user_id')->count('user_id');
-        $lastUpdated = Vote::max('updated_at'); // Lấy thời gian cập nhật cuối cùng
+        $lastUpdated = Vote::max('updated_at'); 
 
         $formattedResults = [
             'total_users_voted' => $totalVotes,
             'votes_by_choice' => $results,
-            'last_updated' => $lastUpdated, // Thêm timestamp vào dữ liệu trả về
+            'last_updated' => $lastUpdated, 
         ];
 
         return response()->json($formattedResults, 200);

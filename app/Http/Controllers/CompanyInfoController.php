@@ -7,7 +7,7 @@ use App\Models\CompanyInfo;
 
 class CompanyInfoController extends Controller
 {
-    // Lấy tất cả thông tin công ty
+
     public function index()
     {
         $companyInfos = CompanyInfo::all();
@@ -18,7 +18,6 @@ class CompanyInfoController extends Controller
         ]);
     }
 
-    // Lấy thông tin công ty cụ thể
     public function show($id)
     {
         $companyInfo = CompanyInfo::find($id);
@@ -28,7 +27,6 @@ class CompanyInfoController extends Controller
         return response()->json($companyInfo);
     }
 
-    // Tạo mới thông tin công ty
     public function store(Request $request)
     {
         $validatedData = $request->validate([
@@ -45,7 +43,6 @@ class CompanyInfoController extends Controller
         return response()->json($companyInfo, 201);
     }
 
-    // Cập nhật thông tin công ty
     public function update(Request $request, $id)
     {
         $companyInfo = CompanyInfo::find($id);
@@ -67,7 +64,6 @@ class CompanyInfoController extends Controller
         return response()->json($companyInfo);
     }
 
-    // Xóa thông tin công ty
     public function destroy($id)
     {
         $companyInfo = CompanyInfo::find($id);

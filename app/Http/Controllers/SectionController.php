@@ -19,16 +19,13 @@ class SectionController extends Controller
         $filename = 'section-' . $request->input('section_number') . '.txt';
         $path = 'contents/' . $filename;
 
-        // Kiểm tra file đã tồn tại chưa
         if (Storage::exists($path)) {
             return response()->json(['message' => 'File đã tồn tại. Vui lòng chọn số thứ tự khác.'], 409);
         }
 
-        // Lưu nội dung vào file
         $fullContent = implode("\n\n", $request->input('content'));
         Storage::put($path, $fullContent);
 
-        // Tạo mới section
         $section = Section::create([
             'title' => $request->input('title'),
             'section_number' => $request->input('section_number'),
@@ -50,21 +47,17 @@ class SectionController extends Controller
         $filename = 'section-' . $request->input('section_number') . '.txt';
         $path = 'contents/' . $filename;
 
-        // Nếu file khác với file cũ và file mới đã tồn tại, trả về lỗi
         if ($section->file_path !== $path && Storage::exists($path)) {
             return response()->json(['message' => 'File đã tồn tại. Vui lòng chọn số thứ tự khác.'], 409);
         }
 
-        // Xóa file cũ nếu đường dẫn đã thay đổi
         if ($section->file_path !== $path) {
             Storage::delete($section->file_path);
         }
 
-        // Lưu file mới
         $fullContent = implode("\n\n", $request->input('content'));
         Storage::put($path, $fullContent);
 
-        // Cập nhật thông tin section
         $section->update([
             'title' => $request->input('title'),
             'section_number' => $request->input('section_number'),

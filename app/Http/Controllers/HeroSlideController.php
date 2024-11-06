@@ -31,7 +31,6 @@ class HeroSlideController extends Controller
         return response()->json($heroSlide);
     }
 
-    // Tạo mới một slide
  public function store(Request $request)
     {
         $validatedData = $request->validate([
@@ -46,7 +45,6 @@ class HeroSlideController extends Controller
         return response()->json($heroSlide, 201);
     }
 
-    // Cập nhật slide
     public function update(Request $request, $id)
     {
         $heroSlide = HeroSlide::find($id);
@@ -66,7 +64,7 @@ class HeroSlideController extends Controller
         return response()->json($heroSlide);
     }
 
-    // Xóa slide
+
     public function destroy($id)
     {
         $heroSlide = HeroSlide::findOrFail($id);

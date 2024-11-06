@@ -70,28 +70,28 @@ class ContactController extends Controller
 
         return response()->json($contacts);
     }
-        public function destroy($id)
-        {
-            $contact = Contact::find($id);
+    public function destroy($id)
+    {
+        $contact = Contact::find($id);
 
-            if (!$contact) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Liên hệ không tồn tại!'
-                ], 404);
-            }
-
-            $contact->delete();
-
+        if (!$contact) {
             return response()->json([
-                'status' => 'success',
-                'message' => 'Liên hệ đã được xóa thành công!'
-            ], 200);
+                'status' => 'error',
+                'message' => 'Liên hệ không tồn tại!'
+            ], 404);
         }
 
-            public function reply(Request $request)
+        $contact->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Liên hệ đã được xóa thành công!'
+        ], 200);
+    }
+
+    public function reply(Request $request)
     {
-        // Kiểm tra dữ liệu đầu vào
+
         $validator = Validator::make($request->all(), [
             'email' => 'required|email|max:255',
             'message' => 'required|string',
@@ -103,8 +103,6 @@ class ContactController extends Controller
                 'errors' => $validator->errors()
             ], 400);
         }
-
-        // Gửi email phản hồi
         try {
             Mail::send([], [], function ($message) use ($request) {
                 $message->to($request->email) 

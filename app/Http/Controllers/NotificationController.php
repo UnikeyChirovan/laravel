@@ -21,33 +21,33 @@ class NotificationController extends Controller
         return response()->json(['success' => 'Thông báo đã được tạo và gửi!']);
     }
 
-        private function sendNotificationToSubscribers($notification)
-        {
-            $subscribers = NewsletterSubscription::all();
+    private function sendNotificationToSubscribers($notification)
+    {
+        $subscribers = NewsletterSubscription::all();
 
-            foreach ($subscribers as $subscriber) {
-                Mail::send('emails.notification', ['notification' => $notification, 'subscriber' => $subscriber], function ($message) use ($subscriber, $notification) {
-                    $message->to($subscriber->email)
-                            ->subject($notification->title);
-                });
-            }
+        foreach ($subscribers as $subscriber) {
+            Mail::send('emails.notification', ['notification' => $notification, 'subscriber' => $subscriber], function ($message) use ($subscriber, $notification) {
+                $message->to($subscriber->email)
+                        ->subject($notification->title);
+            });
+        }
+    }
+
+    public function getAll(Request $request)
+    {
+        $notifications = Notification::all();
+        return response()->json($notifications);
+    }
+
+    public function delete($id)
+    {
+        $notification = Notification::find($id);
+        if (!$notification) {
+            return response()->json(['error' => 'Thông báo không tồn tại!'], 404);
         }
 
-        public function getAll(Request $request)
-        {
-            $notifications = Notification::all();
-            return response()->json($notifications);
-        }
-
-        public function delete($id)
-        {
-            $notification = Notification::find($id);
-            if (!$notification) {
-                return response()->json(['error' => 'Thông báo không tồn tại!'], 404);
-            }
-
-            $notification->delete();
-            return response()->json(['success' => 'Thông báo đã được xóa!']);
-        }
+        $notification->delete();
+        return response()->json(['success' => 'Thông báo đã được xóa!']);
+    }
 
 }

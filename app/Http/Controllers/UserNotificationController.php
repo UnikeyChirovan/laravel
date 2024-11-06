@@ -56,15 +56,11 @@ class UserNotificationController extends Controller
         return response()->json($notification, 201);
     }
 
-    // public function index()
-    // {
-    //     $notifications = UserNotification::all();
-    //     return response()->json($notifications);
-    // }
+
     public function index()
     {
         $notifications = UserNotification::all();
-        $lastUpdated = UserNotification::max('updated_at'); // Lấy thời gian cập nhật cuối cùng
+        $lastUpdated = UserNotification::max('updated_at'); 
 
         return response()->json([
             'notifications' => $notifications,
@@ -74,18 +70,12 @@ class UserNotificationController extends Controller
 
     public function show($id)
     {
-        // Tìm thông báo dựa vào id
         $notification = UserNotification::find($id);
-
-        // Kiểm tra nếu thông báo không tồn tại
         if (!$notification) {
             return response()->json(['message' => 'Notification not found'], 404);
         }
-
-        // Đọc nội dung file txt
         $content = Storage::disk('public')->get($notification->content_path);
 
-        // Trả về dữ liệu thông báo bao gồm tiêu đề, nội dung và đường dẫn hình ảnh
         return response()->json([
             'notification_detail' => [
                 'id' => $notification->id,
@@ -108,13 +98,11 @@ class UserNotificationController extends Controller
         $validatedText = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
-            'page' => 'nullable|in:home,maps', // Cho phép page là tùy chọn
+            'page' => 'nullable|in:home,maps', 
         ]);
 
         $notification->title = $validatedText['title'];
         Storage::disk('public')->put($notification->content_path, $validatedText['content']);
-
-        // Kiểm tra và cập nhật `page` nếu có trong yêu cầu
         if (isset($validatedText['page']) && $validatedText['page'] !== $notification->page) {
             $notification->page = $validatedText['page'];
         }
@@ -127,18 +115,11 @@ class UserNotificationController extends Controller
 
     public function destroy($id)
     {
-        // Tìm thông báo cần xóa
         $notification = UserNotification::findOrFail($id);
-
-        // Xóa file txt và hình ảnh khỏi storage
         Storage::disk('public')->delete($notification->content_path);
         Storage::disk('public')->delete($notification->image_paths);
-
-        // Xóa thư mục chứa dữ liệu của thông báo nếu không còn file
         $notificationDir = 'notifications/' . $notification->id;
         Storage::disk('public')->deleteDirectory($notificationDir);
-
-        // Xóa thông báo khỏi cơ sở dữ liệu
         $notification->delete();
 
         return response()->json(null, 204);

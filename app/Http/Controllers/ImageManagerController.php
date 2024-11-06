@@ -37,7 +37,7 @@ class ImageManagerController extends Controller
 public function getImages()
 {
     $images = ImageManager::all();
-    $lastUpdated = ImageManager::max('updated_at'); // Lấy thời gian cập nhật cuối cùng
+    $lastUpdated = ImageManager::max('updated_at'); 
 
     return response()->json([
         'images' => $images,

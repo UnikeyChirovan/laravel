@@ -8,26 +8,26 @@ use Illuminate\Support\Facades\Validator;
 
 class CategoryController extends Controller
 {
-public function getPageOptions()
-{
-    $pageOptions = [
-        ['value' => 'home', 'label' => 'home'],
-        ['value' => 'about', 'label' => 'about'],
-        ['value' => 'contact', 'label' => 'contact'],
-        ['value' => 'maps', 'label' => 'maps'],
-        ['value' => 'footer', 'label' => 'footer'],
-    ];
+    public function getPageOptions()
+    {
+        $pageOptions = [
+            ['value' => 'home', 'label' => 'home'],
+            ['value' => 'about', 'label' => 'about'],
+            ['value' => 'contact', 'label' => 'contact'],
+            ['value' => 'maps', 'label' => 'maps'],
+            ['value' => 'footer', 'label' => 'footer'],
+        ];
 
-    return response()->json([
-        'pageOptions' => $pageOptions
-    ]);
-}
+        return response()->json([
+            'pageOptions' => $pageOptions
+        ]);
+    }
 
-        // Lấy tất cả danh sách đề mục
+
     public function index()
     {
         $categories = Category::all();
-        $lastUpdated = Category::max('updated_at'); // Lấy thời gian cập nhật cuối cùng
+        $lastUpdated = Category::max('updated_at'); 
 
         return response()->json([
             'categories' => $categories,
@@ -35,8 +35,6 @@ public function getPageOptions()
         ]);
     }
 
-
-    // Lấy thông tin đề mục cụ thể
     public function show($id)
     {
         $category = Category::find($id);
@@ -53,14 +51,14 @@ public function getPageOptions()
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'code' => 'required|string|unique:categories,code|max:255',
-            'page' => 'required|in:home,about,contact,maps', // Kiểm tra giá trị cho page
+            'page' => 'required|in:home,about,contact,maps',
         ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
-        $category = Category::create($request->only('name', 'code', 'page')); // Thêm trường page
+        $category = Category::create($request->only('name', 'code', 'page')); 
         return response()->json($category, 201);
     }
 
@@ -71,19 +69,17 @@ public function getPageOptions()
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'code' => 'required|string|unique:categories,code,'.$category->id.'|max:255',
-            'page' => 'required|in:home,about,contact,maps', // Kiểm tra giá trị cho page
+            'page' => 'required|in:home,about,contact,maps', 
         ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
-        $category->update($request->only('name', 'code', 'page')); // Thêm trường page
+        $category->update($request->only('name', 'code', 'page')); 
         return response()->json($category, 200);
     }
 
-
-    // Xóa một đề mục
     public function destroy($id)
     {
         $category = Category::find($id);

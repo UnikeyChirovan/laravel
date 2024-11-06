@@ -10,11 +10,11 @@ class CreateUserNotificationsTable extends Migration
     {
         Schema::create('user_notifications', function (Blueprint $table) {
             $table->id();
-            $table->string('title'); // Tiêu đề của thông báo
-            $table->string('content_path'); // Đường dẫn tới file txt chứa nội dung
+            $table->string('title'); 
+            $table->string('content_path'); 
             $table->enum('page', ['home', 'maps']);
-            $table->json('image_paths')->nullable(); // Đường dẫn tới các file hình ảnh
-            $table->timestamps(); // Thời gian tạo và cập nhật thông báo
+            $table->json('image_paths')->nullable(); 
+            $table->timestamps(); 
         });
     }
 

@@ -11,7 +11,6 @@ class UserNotification extends Model
 
     protected $fillable = ['title', 'content_path', 'image_paths', 'page'];
 
-    // Chuyển đổi cột image_paths từ dạng JSON thành array khi thao tác
     protected $casts = [
         'image_paths' => 'array',
     ];
