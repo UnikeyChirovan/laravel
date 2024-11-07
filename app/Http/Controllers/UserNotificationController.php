@@ -60,12 +60,8 @@ class UserNotificationController extends Controller
     public function index()
     {
         $notifications = UserNotification::all();
-        $lastUpdated = UserNotification::max('updated_at'); 
 
-        return response()->json([
-            'notifications' => $notifications,
-            'last_updated' => $lastUpdated,
-        ]);
+        return response()->json($notifications);
     }
 
     public function show($id)
@@ -77,14 +73,10 @@ class UserNotificationController extends Controller
         $content = Storage::disk('public')->get($notification->content_path);
 
         return response()->json([
-            'notification_detail' => [
-                'id' => $notification->id,
-                'title' => $notification->title,
-                'content' => $content,
-                'image_paths' => $notification->image_paths,
-                'page' => $notification->page, 
-            ],
-            'last_updated' => $notification->updated_at,
+            'id' => $notification->id,
+            'title' => $notification->title,
+            'content' => $content,
+            'image_paths' => $notification->image_paths,
         ]);
     }
     public function updateText(Request $request, $id)

@@ -15,11 +15,7 @@ class HeroSlideController extends Controller
     public function index()
     {
         $heroSlides = HeroSlide::all();
-        $lastUpdated = HeroSlide::max('updated_at');
-        return response()->json([
-            'heroSlides' => $heroSlides,
-            'last_updated' => $lastUpdated,
-        ]);
+        return response()->json($heroSlides);
     }
 
     public function show($id)

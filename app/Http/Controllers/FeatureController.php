@@ -10,11 +10,7 @@ class FeatureController extends Controller
     public function index()
     {
         $features = Feature::all();
-        $lastUpdated = Feature::max('updated_at');
-        return response()->json([
-            'features' => $features,
-            'last_updated' => $lastUpdated,
-        ]);
+        return response()->json($features);
     }
 
     public function show($id)

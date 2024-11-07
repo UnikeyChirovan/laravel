@@ -11,11 +11,7 @@ class CompanyInfoController extends Controller
     public function index()
     {
         $companyInfos = CompanyInfo::all();
-        $lastUpdated = CompanyInfo::max('updated_at');
-        return response()->json([
-            'companyInfos' => $companyInfos,
-            'last_updated' => $lastUpdated,
-        ]);
+        return response()->json($companyInfos);
     }
 
     public function show($id)

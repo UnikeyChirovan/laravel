@@ -10,11 +10,7 @@ class FutureProjectController extends Controller
     public function index()
     {
         $futureProjects = FutureProject::all();
-        $lastUpdated = FutureProject::max('updated_at');
-        return response()->json([
-            'futureProjects' => $futureProjects,
-            'last_updated' => $lastUpdated,
-        ]);
+        return response()->json($futureProjects);
     }
 
     public function show($id)

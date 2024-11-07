@@ -75,12 +75,10 @@ class VoteController extends Controller
                         ->get();
                         
         $totalVotes = Vote::distinct('user_id')->count('user_id');
-        $lastUpdated = Vote::max('updated_at'); 
 
         $formattedResults = [
             'total_users_voted' => $totalVotes,
             'votes_by_choice' => $results,
-            'last_updated' => $lastUpdated, 
         ];
 
         return response()->json($formattedResults, 200);

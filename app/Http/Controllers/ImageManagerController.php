@@ -39,10 +39,7 @@ public function getImages()
     $images = ImageManager::all();
     $lastUpdated = ImageManager::max('updated_at'); 
 
-    return response()->json([
-        'images' => $images,
-        'last_updated' => $lastUpdated,
-    ], 200);
+    return response()->json($images, 200);
 }
 
 

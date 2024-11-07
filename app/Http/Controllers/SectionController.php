@@ -84,7 +84,6 @@ class SectionController extends Controller
     public function index()
     {
         $sections = Section::all();
-        $lastUpdated = Section::max('updated_at'); 
 
         foreach ($sections as $section) {
             if (Storage::exists($section->file_path)) {
@@ -95,10 +94,7 @@ class SectionController extends Controller
             }
         }
 
-        return response()->json([
-            'sections' => $sections,
-            'last_updated' => $lastUpdated,
-        ]);
+        return response()->json($sections);
     }
 
 

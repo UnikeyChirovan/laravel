@@ -27,12 +27,7 @@ class CategoryController extends Controller
     public function index()
     {
         $categories = Category::all();
-        $lastUpdated = Category::max('updated_at'); 
-
-        return response()->json([
-            'categories' => $categories,
-            'last_updated' => $lastUpdated,
-        ]);
+        return response()->json($categories,);
     }
 
     public function show($id)
