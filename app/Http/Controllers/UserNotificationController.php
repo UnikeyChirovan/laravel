@@ -77,6 +77,7 @@ class UserNotificationController extends Controller
             'title' => $notification->title,
             'content' => $content,
             'image_paths' => $notification->image_paths,
+            'page' => $notification->page,
         ]);
     }
     public function updateText(Request $request, $id)
