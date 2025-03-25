@@ -16,19 +16,32 @@ class VideoManagerController extends Controller
             'videos.*' => 'mimes:mp4,mov,avi|max:204800',
             'video_names' => 'required',
             'video_names.*' => 'string|max:255',
+            'descriptions' => 'nullable',
+            'descriptions.*' => 'string|max:1000',
+            'thumbnails' => 'nullable|array',
+            'thumbnails.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120', // 5MB   
         ]);
 
         $videos = [];
         $files = is_array($request->file('videos')) ? $request->file('videos') : [$request->file('videos')];
         $names = is_array($request->video_names) ? $request->video_names : [$request->video_names];
+        $descriptions = is_array($request->descriptions) ? $request->descriptions : [$request->descriptions];
+        $thumbnails = $request->file('thumbnails') ?? [];
 
         foreach ($files as $index => $file) {
             $path = $file->store('videomanager', 'public'); 
             $videoName = $names[$index] ?? "Untitled";
+            $description = $descriptions[$index] ?? null;
+            $thumbnailPath = null;
+            if (isset($thumbnails[$index])) {
+                $thumbnailPath = $thumbnails[$index]->store('thumbnails', 'public');
+            }
 
             $videos[] = VideoManager::create([
                 'video_name' => $videoName,
                 'video_path' => $path,
+                'description' => $description,
+                'thumbnail' => $thumbnailPath,
             ]);
         }
 
@@ -36,9 +49,7 @@ class VideoManagerController extends Controller
             'message' => 'Video đã được tải lên thành công!',
             'videos' => $videos
         ], 201);
-
     }
-
 
     public function getVideos()
     {
@@ -60,12 +71,31 @@ class VideoManagerController extends Controller
     {
         $request->validate([
             'video_name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
+            'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
         ]);
 
         $video = VideoManager::findOrFail($id);
-        $video->update([
-            'video_name' => $request->video_name,
-        ]);
+        // Xử lý cập nhật thumbnail
+        if ($request->hasFile('thumbnail')) {
+            // Xóa thumbnail cũ nếu có
+            if ($video->thumbnail && Storage::exists('public/' . $video->thumbnail)) {
+                Storage::delete('public/' . $video->thumbnail);
+            }
+
+            // Lưu thumbnail mới
+            $thumbnailPath = $request->file('thumbnail')->store('thumbnails', 'public');
+            $video->update([
+                'video_name' => $request->video_name,
+                'description' => $request->description,
+                'thumbnail' => $thumbnailPath,
+            ]);
+        } else {
+            $video->update([
+                'video_name' => $request->video_name,
+                'description' => $request->description,
+            ]);
+        }
 
         return response()->json([
             'message' => 'Cập nhật thành công!',

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class VideoManager extends Model
 {
-    protected $fillable = ['video_name', 'video_path', 'is_featured'];
+    protected $fillable = ['video_name', 'video_path', 'description', 'is_featured', 'thumbnail'];
 
     protected $casts = [
         'is_featured' => 'boolean', // Ép kiểu thành boolean
