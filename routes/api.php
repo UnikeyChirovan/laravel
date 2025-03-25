@@ -20,6 +20,8 @@ use App\Http\Controllers\ImageManagerController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\FutureProjectController;
 use App\Http\Controllers\UserNotificationController;
+use App\Http\Controllers\VideoManagerController;
+
 
 
 Route::options('/{any}', function (Request $request) {
@@ -131,6 +133,7 @@ Route::prefix('newsletter')->middleware(['api','blacklist', 'throttle.requests']
     Route::post('/notifications/create', [NotificationController::class, 'create']);
     Route::get('/notifications', [NotificationController::class, 'getAll']);
     Route::delete('/notifications/{id}', [NotificationController::class, 'delete']);
+    Route::get('/emails', [NewsletterController::class, 'getEmails']);
     });
 });
 Route::group([
@@ -219,4 +222,18 @@ Route::group([
     Route::post('/', [FeatureController::class, 'store'])->middleware('admin');
     Route::put('/{id}', [FeatureController::class, 'update'])->middleware('admin');
     Route::delete('/{id}', [FeatureController::class, 'destroy'])->middleware('admin');
+});
+
+
+Route::group([
+    'prefix' => 'videos',
+    'middleware' => ['throttle.requests'],
+], function () {
+    Route::post('/upload', [VideoManagerController::class, 'uploadVideo'])->middleware('admin');
+    Route::get('/featured', [VideoManagerController::class, 'getFeaturedVideo']);
+    Route::get('/', [VideoManagerController::class, 'getVideos']);
+    Route::get('/{id}', [VideoManagerController::class, 'getVideo']);
+    Route::put('/{id}', [VideoManagerController::class, 'updateVideo'])->middleware('admin');
+    Route::delete('/{id}', [VideoManagerController::class, 'deleteVideo'])->middleware('admin');
+    Route::put('/{id}/set-featured', [VideoManagerController::class, 'setFeaturedVideo'])->middleware('admin');
 });

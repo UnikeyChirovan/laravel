@@ -41,7 +41,7 @@ class ContactController extends Controller
     private function sendContactEmail($data)
     {
         Mail::send([], [], function ($message) use ($data) {
-            $message->to('selorsontales@gmail.com') 
+            $message->to('selorson.tcv@gmail.com') 
                 ->subject($data['title']) 
                 ->html('
                     <h2>Thông tin liên hệ</h2>

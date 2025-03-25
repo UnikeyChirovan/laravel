@@ -47,5 +47,11 @@ class NewsletterController extends Controller
         return response()->json(['success' => 'Hủy đăng ký thành công!'], 200);
     }
 
+    public function getEmails()
+    {
+        $emails = NewsletterSubscription::select('email', 'created_at')->get();
+        return response()->json(['emails' => $emails], 200);
+    }
+
 
 }
