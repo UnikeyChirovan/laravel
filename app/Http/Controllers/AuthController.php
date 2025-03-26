@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\Redis;
 
 class AuthController extends Controller
 {
-    protected function respondWithToken($token, $user, $isAdmin)
+    protected function respondWithToken($token, $user, $isAdmin, $sessionId)
     {
         return response()->json([
             'user' => [
@@ -34,7 +34,8 @@ class AuthController extends Controller
             'isAdmin' => $isAdmin,
             'access_token' => $token,
             'token_type' => 'bearer',
-            'expires_in' => Auth::guard('api')->factory()->getTTL()
+            'expires_in' => Auth::guard('api')->factory()->getTTL(),
+            'session_id' => $sessionId,
         ]);
     }
 
@@ -156,7 +157,7 @@ class AuthController extends Controller
             $Expiration = $rememberMe ? 60 * 24 * 14 : 60 * 24;
             Redis::setex($key, $Expiration * 60, $refreshToken);
             $cookie = cookie('refresh_token', $refreshToken, $Expiration, null, null, true, true, 'None');
-            return $this->respondWithToken($token, $user, $isAdmin)->cookie($cookie);
+            return $this->respondWithToken($token, $user, $isAdmin, $sessionId)->cookie($cookie);
         }
         return response()->json(["message" => "Tài khoản hoặc mật khẩu không chính xác"], 401);
     }
@@ -297,22 +298,100 @@ class AuthController extends Controller
         return response()->json(['message' => 'Đăng xuất thành công'])->cookie($cookie);
     }
 
+    // public function forceLogout(Request $request)
+    // {
+    //     $userId = $request->input('user_id');
+    //     $userAgent = substr($request->userAgent() ?? 'unknown', 0, 255); 
+    //     if (!$userId) {
+    //         return response()->json(['message' => 'Thiếu user_id'], 400);
+    //     }
+    //     try {
+    //         DeviceInfo::where('user_id', $userId)
+    //                     ->where('user_agent', $userAgent)
+    //                     ->delete();
+    //         return response()->json(['message' => 'Vui lòng đăng nhập lại'], 200);
+    //     } catch (\Exception $e) {
+    //         return response()->json(['message' => 'Lỗi khi xóa dữ liệu thiết bị: ' . $e->getMessage()], 500);
+    //     }
+    // }
     public function forceLogout(Request $request)
     {
         $userId = $request->input('user_id');
+        $sessionId = $request->input('session_id');
         $userAgent = substr($request->userAgent() ?? 'unknown', 0, 255); 
         if (!$userId) {
             return response()->json(['message' => 'Thiếu user_id'], 400);
         }
         try {
-            DeviceInfo::where('user_id', $userId)
+            if ($sessionId) {
+                DeviceInfo::where('user_id', $userId)
+                        ->where('user_agent', $userAgent)
+                        ->where('session_id', $sessionId)
+                        ->delete();
+            } else {
+                DeviceInfo::where('user_id', $userId)
                         ->where('user_agent', $userAgent)
                         ->delete();
+            }
             return response()->json(['message' => 'Vui lòng đăng nhập lại'], 200);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Lỗi khi xóa dữ liệu thiết bị: ' . $e->getMessage()], 500);
         }
     }
+
+    public function superForcelogout(Request $request) 
+    {
+        $token = $request->bearerToken();
+        if (!$token || !Auth::guard('api')->check()) {
+            return response()->json(['message' => 'Token không hợp lệ hoặc User không được xác thực'], 401);
+        }
+        
+        $user = Auth::guard('api')->user();
+        
+        // Xóa tất cả refresh tokens trong Redis của user này
+        $pattern = "refresh_tokens:" . $user->id . ":*";
+        $keys = Redis::keys($pattern);
+        if (!empty($keys)) {
+            Redis::del($keys);
+        }
+        
+        // Xóa tất cả device info của user này
+        DeviceInfo::where('user_id', $user->id)->delete();
+        
+        // Xóa refresh token từ cookie
+        $cookie = cookie('refresh_token', '', -1);
+        
+        return response()->json(['message' => 'Đăng xuất toàn bộ thiết bị thành công'])->cookie($cookie);
+    }
+
+    public function selfDeleteAccount(Request $request)
+    {
+        $user = Auth::guard('api')->user();
+        if (!$user) {
+            return response()->json(['message' => 'Bạn chưa đăng nhập!'], 401);
+        }
+
+        try {
+            // Xóa tất cả token refresh trong Redis
+            $keys = Redis::keys("refresh_tokens:" . $user->id . ":*");
+            foreach ($keys as $key) {
+                Redis::del($key);
+            }
+
+            // Xóa thông tin thiết bị
+            DeviceInfo::where('user_id', $user->id)->delete();
+            DeviceManager::where('user_id', $user->id)->delete();
+
+            // Xóa tài khoản người dùng
+            $user->delete();
+
+            return response()->json(['message' => 'Tài khoản đã bị xóa vĩnh viễn!'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Có lỗi xảy ra, vui lòng thử lại!'], 500);
+        }
+    }
+
+
     public function verifyEmail(Request $request)
     {
         $token = $request->query('token');

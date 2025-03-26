@@ -12,6 +12,10 @@ class CreateVideoManagersTable extends Migration
             $table->id();
             $table->string('video_name');
             $table->string('video_path');
+            $table->text('description')->nullable(); // Thêm mô tả
+            $table->string('thumbnail')->nullable(); // Thêm ảnh thumbnail
+            $table->integer('episode_number')->nullable(); // Thêm số tập
+            $table->boolean('is_featured')->default(false); // Thêm cột đánh dấu nổi bật
             $table->timestamps();
         });
     }

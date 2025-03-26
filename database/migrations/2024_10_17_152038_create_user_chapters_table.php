@@ -12,6 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('chapter_id')->constrained()->onDelete('cascade');
+            $table->foreignId('episode_id')->nullable()->constrained('video_managers')->onDelete('cascade');
             $table->timestamps();
         });
     }

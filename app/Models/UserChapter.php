@@ -9,7 +9,7 @@ class UserChapter extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'chapter_id'];
+    protected $fillable = ['user_id', 'chapter_id', 'episode_id'];
 
     public function user()
     {
@@ -20,4 +20,10 @@ class UserChapter extends Model
     {
         return $this->belongsTo(Chapter::class);
     }
+
+    public function episode()
+    {
+        return $this->belongsTo(VideoManager::class, 'episode_id');
+    }
+
 }

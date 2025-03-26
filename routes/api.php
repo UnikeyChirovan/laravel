@@ -37,6 +37,8 @@ Route::group([
     Route::post('/login', [AuthController::class, 'login'])->middleware('blacklist')->name('auth.login');
     Route::post('/logout', [AuthController::class, 'logout'])->name('auth.logout');
     Route::post('/force-logout', [AuthController::class, 'forceLogout'])->name('auth.forceLogout');
+    Route::post('/super-force-logout', [AuthController::class, 'superForceLogout']);
+    Route::middleware('auth:api')->delete('/delete-account', [AuthController::class, 'selfDeleteAccount']);
     Route::get('/verify-email', [AuthController::class, 'verifyEmail'])->name('auth.verifyEmail');
     Route::post('/password-reset-request', [AuthController::class, 'sendResetLinkEmail'])->name('auth.passwordResetRequest');
     Route::post('/password-reset', [AuthController::class, 'resetPassword'])->name('auth.passwordReset');
@@ -232,6 +234,8 @@ Route::group([
     Route::post('/upload', [VideoManagerController::class, 'uploadVideo'])->middleware('admin');
     Route::get('/featured', [VideoManagerController::class, 'getFeaturedVideo']);
     Route::get('/', [VideoManagerController::class, 'getVideos']);
+    Route::post('/user-episode', [UserChapterController::class, 'saveOrUpdateCurrentEpisode']); 
+    Route::get('/user-episode', [UserChapterController::class, 'getLastWatchEpisode']); 
     Route::get('/{id}', [VideoManagerController::class, 'getVideo']);
     Route::put('/{id}', [VideoManagerController::class, 'updateVideo'])->middleware('admin');
     Route::delete('/{id}', [VideoManagerController::class, 'deleteVideo'])->middleware('admin');
