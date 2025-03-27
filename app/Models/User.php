@@ -48,7 +48,16 @@ class User extends Authenticatable implements JWTSubject
         'login_at' => 'datetime',
         'change_password_at' => 'datetime',
         'birthday' => 'date',
+        'show_email' => 'boolean',
+        'show_phone_number' => 'boolean',
+        'show_biography' => 'boolean',
+        'show_hobbies' => 'boolean',
+        'show_occupation' => 'boolean',
+        'show_birthday' => 'boolean',
+        'show_gender' => 'boolean',
+        'show_address' => 'boolean',
     ];
+    
 
      public function getJWTIdentifier()
     {

@@ -18,9 +18,9 @@ use App\Http\Controllers\CompanyInfoController;
 use App\Http\Controllers\UserChapterController;
 use App\Http\Controllers\ImageManagerController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\VideoManagerController;
 use App\Http\Controllers\FutureProjectController;
 use App\Http\Controllers\UserNotificationController;
-use App\Http\Controllers\VideoManagerController;
 
 
 
@@ -241,3 +241,13 @@ Route::group([
     Route::delete('/{id}', [VideoManagerController::class, 'deleteVideo'])->middleware('admin');
     Route::put('/{id}/set-featured', [VideoManagerController::class, 'setFeaturedVideo'])->middleware('admin');
 });
+
+
+Route::group([
+    'prefix' => 'private',
+    'middleware' => ['api', 'auth:api', 'blacklist', 'throttle.requests'],
+], function () {
+    Route::post('/settings ', [ProfileController::class, 'updateVisibilitySettings']);
+    Route::get('/settings ', [ProfileController::class, 'getVisibilitySettings']);
+});
+

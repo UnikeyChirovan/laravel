@@ -17,23 +17,43 @@ class ProfileController extends Controller
     public function show($id)
     {
         $user = User::findOrFail($id);
-        return response()->json($user->only([
-            'id',
-            'name',
-            'username',
-            'avatar',
-            'email',
-            'cover',
-            'occupation',
-            'birthday',
-            'gender',
-            'address',
-            'biography',
-            'hobbies',
-            'phone_number',
-            'avatar_position', 
-            'cover_position', 
-        ]));
+
+        $data = [
+            'id' => $user->id,
+            'name' => $user->name,
+            'username' => $user->username,
+            'avatar' => $user->avatar,
+            'cover' => $user->cover,
+            'avatar_position' => $user->avatar_position,
+            'cover_position' => $user->cover_position,
+        ];
+
+        if ($user->show_email) {
+            $data['email'] = $user->email;
+        }
+        if ($user->show_phone_number) {
+            $data['phone_number'] = $user->phone_number;
+        }
+        if ($user->show_occupation) {
+            $data['occupation'] = $user->occupation;
+        }
+        if ($user->show_birthday) {
+            $data['birthday'] = $user->birthday;
+        }
+        if ($user->show_gender) {
+            $data['gender'] = $user->gender;
+        }
+        if ($user->show_address) {
+            $data['address'] = $user->address;
+        }
+        if ($user->show_biography) {
+            $data['biography'] = $user->biography;
+        }
+        if ($user->show_hobbies) {
+            $data['hobbies'] = $user->hobbies;
+        }
+
+        return response()->json($data);
     }
 
     public function edit($id)
@@ -180,4 +200,35 @@ class ProfileController extends Controller
         return response()->json(['message' => 'Vị trí avatar và cover đã được cập nhật thành công!'], 200);
     }
 
+
+    public function getVisibilitySettings(Request $request)
+    {
+        $user = $request->user();
+        return response()->json([
+            'email' => $user->show_email,
+            'phone_number' => $user->show_phone_number,
+            'occupation' => $user->show_occupation,
+            'biography' => $user->show_biography,
+            'hobbies' => $user->show_hobbies,
+            'gender' => $user->show_gender,    
+            'address' => $user->show_address,  
+            'birthday' => $user->show_birthday 
+        ]);
+    }
+
+    public function updateVisibilitySettings(Request $request)
+    {
+        $user = $request->user();
+        $user->update([
+            'show_email' => $request->email,
+            'show_phone_number' => $request->phone_number,
+            'show_occupation' => $request->occupation,
+            'show_biography' => $request->biography,
+            'show_hobbies' => $request->hobbies,
+            'show_gender' => $request->gender,    
+            'show_address' => $request->address,
+            'show_birthday' => $request->birthday  
+        ]);
+        return response()->json(['message' => 'Cập nhật thành công']);
+    }
 }
