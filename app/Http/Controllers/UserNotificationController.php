@@ -88,23 +88,51 @@ class UserNotificationController extends Controller
             return response()->json(['message' => 'Notification not found'], 404);
         }
 
-        $validatedText = $request->validate([
+        $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
-            'page' => 'nullable|in:home,maps', 
+            'page' => 'nullable|in:home,maps',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
-        $notification->title = $validatedText['title'];
-        Storage::disk('public')->put($notification->content_path, $validatedText['content']);
-        if (isset($validatedText['page']) && $validatedText['page'] !== $notification->page) {
-            $notification->page = $validatedText['page'];
+        // Cập nhật tiêu đề và nội dung văn bản
+        $notification->title = $validated['title'];
+        Storage::disk('public')->put($notification->content_path, $validated['content']);
+
+        // Cập nhật trang nếu cần
+        if (isset($validated['page']) && $validated['page'] !== $notification->page) {
+            $notification->page = $validated['page'];
+        }
+
+        // Xử lý cập nhật hình ảnh
+        if ($request->hasFile('images')) {
+            // Xoá hình ảnh cũ nếu có
+            if (!empty($notification->image_paths)) {
+                foreach ($notification->image_paths as $oldImage) {
+                    if (Storage::disk('public')->exists($oldImage)) {
+                        Storage::disk('public')->delete($oldImage);
+                    }
+                }
+            }
+
+            $imagePaths = [];
+            $notificationDir = 'notifications/' . $notification->id;
+
+            foreach ($request->file('images') as $index => $image) {
+                $imagePath = $image->storeAs($notificationDir, ($index + 1) . '.' . $image->extension(), 'public');
+                $imagePaths[] = $imagePath;
+            }
+
+            $notification->image_paths = $imagePaths;
         }
 
         $notification->save();
 
-        return response()->json($notification, 200);
+        return response()->json([
+            'message' => 'Cập nhật thành công!',
+            'notification' => $notification
+        ], 200);
     }
-
 
     public function destroy($id)
     {
