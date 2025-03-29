@@ -2,15 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use App\Models\User;
+use App\Models\Block;
+use App\Models\Follow;
 use App\Models\RequestLog;
 use Illuminate\Http\Request;
 use App\Models\BlacklistedIp;
 use App\Models\DeviceManager;
 use Illuminate\Support\Facades\DB;
+use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Redis;
 
 
 
@@ -282,4 +287,51 @@ class UserController extends Controller
         return response()->json(['message' => 'Thông tin đã được chuyển vào blacklist và xóa khỏi request logs.']);
     }
 
+public function explore(Request $request)
+{
+    $userId = auth()->id();
+    $cacheKey = "explore_limit:$userId";
+
+    // Kiểm tra số lượt đổi danh sách
+    $remainingAttempts = Redis::get($cacheKey);
+    if ($remainingAttempts !== null && $remainingAttempts <= 0) {
+        return response()->json(['message' => 'Bạn đã hết lượt đổi, hãy đợi hồi phục!'], 429);
+    }
+
+    // Lấy danh sách ID người dùng đã follow
+    $followedUsers = Follow::where('follower_id', $userId)->pluck('following_id');
+
+    // Lấy danh sách ID người dùng bị block hai chiều
+    $blockedUsers = Block::where('blocker_id', $userId)
+        ->orWhere('blocked_id', $userId)
+        ->get(['blocker_id', 'blocked_id'])
+        ->flatMap(function ($block) {
+            return [$block->blocker_id, $block->blocked_id];
+        })
+        ->unique()
+        ->filter(fn($id) => $id !== $userId) // Loại bỏ chính user
+        ->values();
+
+    // Lọc danh sách người dùng ngẫu nhiên
+    $users = User::where('id', '!=', $userId)
+        ->where('id', '!=', 1) // Bỏ admin có id = 1
+        ->whereNotIn('id', $followedUsers) // Loại những người đã follow
+        ->whereNotIn('id', $blockedUsers) // Loại những người bị block hai chiều
+        ->inRandomOrder()
+        ->limit(5)
+        ->get(['id', 'name', 'avatar']);
+
+    // Cập nhật số lượt đổi danh sách
+    if ($remainingAttempts === null) {
+        Redis::setex($cacheKey, 10800, 2); // 3 giờ TTL, 2 lần đổi còn lại
+    } else {
+        Redis::decr($cacheKey);
+    }
+
+    return response()->json([
+        'users' => $users,
+        'remainingAttempts' => Redis::get($cacheKey)
+    ]);
 }
+}
+

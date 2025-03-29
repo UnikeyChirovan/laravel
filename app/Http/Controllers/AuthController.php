@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\Redis;
 
 class AuthController extends Controller
 {
-    protected function respondWithToken($token, $user, $isAdmin, $sessionId)
+    protected function respondWithToken($token, $user, $isAdmin)
     {
         return response()->json([
             'user' => [
@@ -35,18 +35,18 @@ class AuthController extends Controller
             'access_token' => $token,
             'token_type' => 'bearer',
             'expires_in' => Auth::guard('api')->factory()->getTTL(),
-            'session_id' => $sessionId,
         ]);
     }
 
-    private function createAccessToken($user)
+    private function createAccessToken($user, $sessionId)
     {
         $isAdmin = $user->department_id == 1;
         $payload = [
             'isAdmin' => $isAdmin,  
             'id' => $user->id,
             'jti' => uniqid(),  
-            'iat' => time(),   
+            'iat' => time(),
+            'session_id' => $sessionId,   
         ];
         $token = JWTAuth::customClaims($payload)->fromUser($user);
         return $token;
@@ -130,7 +130,7 @@ class AuthController extends Controller
             $isAdmin = $user->department_id == 1;
             $userAgent = substr($request->userAgent() ?? 'unknown', 0, 255); 
             $sessionId = uniqid("",false);  
-            $token = $this->createAccessToken($user);
+            $token = $this->createAccessToken($user, $sessionId);
             if (!$token) {
                 return response()->json(['error' => 'Unauthorized'], 401);
             }

@@ -115,4 +115,46 @@ class UserChapterController extends Controller
             'message' => 'Người dùng chưa xem tập nào.'
         ], 404);
     }
+public function getGuestLastWatchEpisode(Request $request, $id)
+{
+    try {
+        $user = JWTAuth::parseToken()->authenticate();
+    } catch (\Exception $e) {
+        return response()->json(['message' => 'Unauthorized'], 401);
+    }
+
+    $userChapter = UserChapter::where('user_id', $id)->latest()->first();
+
+    if ($userChapter && $userChapter->episode_id) {
+        return response()->json([
+            'episode_id' => $userChapter->episode_id
+        ], 200);
+    }
+    
+    return response()->json([
+        'message' => 'Người dùng chưa xem tập nào.'
+    ], 404);
+}
+
+public function getGuestLastReadChapter(Request $request, $id)
+{
+    try {
+        $user = JWTAuth::parseToken()->authenticate();
+    } catch (\Exception $e) {
+        return response()->json(['message' => 'Unauthorized'], 401);
+    }
+
+    $userChapter = UserChapter::where('user_id', $id)->latest()->first();
+
+    if ($userChapter) {
+        return response()->json([
+            'chapter_id' => $userChapter->chapter_id
+        ], 200);
+    }
+    
+    return response()->json([
+        'message' => 'Người dùng chưa đọc chương nào.'
+    ], 404);
+}
+
 }

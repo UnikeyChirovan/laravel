@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VoteController;
 use App\Http\Controllers\StoryController;
+use App\Http\Controllers\FollowController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\FeatureController;
@@ -63,6 +64,7 @@ Route::group([
 ], function () {
     Route::get('/create', [UserController::class, 'create'])->name('users.create');
     Route::get('/', [UserController::class, 'index'])->name('users.index');
+    Route::get('/explore', [UserController::class, 'explore'])->name('users.explore');
     Route::post('/', [UserController::class, 'store'])->name('users.store');
     Route::get('/{id}/edit', [UserController::class, 'edit'])->name('users.edit');
     Route::put('/{id}', [UserController::class, 'update'])->name('users.update');
@@ -109,6 +111,7 @@ Route::prefix('story')->middleware(['api', 'auth:api'])->group(function () {
     Route::put('/settings', [StoryController::class, 'updateSettings'])->name('settings.update');
     Route::post('/user-chapter', [UserChapterController::class, 'saveOrUpdateCurrentChapter']); 
     Route::get('/user-chapter', [UserChapterController::class, 'getLastReadChapter']); 
+    Route::get('/guest-chapter/{id}', [UserChapterController::class, 'getGuestLastReadChapter']); 
     Route::middleware('admin')->group(function () {
         Route::post('/upload-background', [StoryController::class, 'uploadBackground'])->name('admin.upload-background');
         Route::put('/chapters/{id}', [UploadController::class, 'updateChapter']);
@@ -236,13 +239,19 @@ Route::group([
     Route::get('/', [VideoManagerController::class, 'getVideos']);
     Route::post('/user-episode', [UserChapterController::class, 'saveOrUpdateCurrentEpisode']); 
     Route::get('/user-episode', [UserChapterController::class, 'getLastWatchEpisode']); 
+    Route::get('/guest-episode/{id}', [UserChapterController::class, 'getGuestLastWatchEpisode']); 
     Route::get('/{id}', [VideoManagerController::class, 'getVideo']);
     Route::put('/{id}', [VideoManagerController::class, 'updateVideo'])->middleware('admin');
     Route::delete('/{id}', [VideoManagerController::class, 'deleteVideo'])->middleware('admin');
     Route::put('/{id}/set-featured', [VideoManagerController::class, 'setFeaturedVideo'])->middleware('admin');
 });
 
-
+Route::group([
+    'prefix' => 'guest',
+    'middleware' => ['api', 'auth:api', 'blacklist', 'throttle.requests'],
+], function () {
+    Route::get('/{id}', [ProfileController::class, 'showGuest'])->name('users.showguest');
+});
 Route::group([
     'prefix' => 'private',
     'middleware' => ['api', 'auth:api', 'blacklist', 'throttle.requests'],
@@ -250,4 +259,19 @@ Route::group([
     Route::post('/settings ', [ProfileController::class, 'updateVisibilitySettings']);
     Route::get('/settings ', [ProfileController::class, 'getVisibilitySettings']);
 });
+Route::group([
+    'prefix' => 'social',
+    'middleware' => ['api', 'auth:api', 'blacklist', 'throttle.requests'],
+], function () {
+    Route::post('/follow/{id}', [FollowController::class, 'follow']);
+    Route::delete('/unfollow/{id}', [FollowController::class, 'unfollow']); 
+    Route::post('/block/{id}', [FollowController::class, 'block']); 
+    Route::delete('/unblock/{id}', [FollowController::class, 'unblock']); 
+    Route::get('/is-following/{id}', [FollowController::class, 'isFollowing']); 
+    Route::get('/is-blocked/{id}', [FollowController::class, 'isBlocked']); 
+    Route::get('/followed-users', [FollowController::class, 'followedUsers']);
+    Route::get('/blocked-users', [FollowController::class, 'blockedUsers']); 
+    Route::get('/follow-stats/{userId}', [FollowController::class, 'getFollowStats']);
+});
+
 
