@@ -256,8 +256,8 @@ Route::group([
     'prefix' => 'private',
     'middleware' => ['api', 'auth:api', 'blacklist', 'throttle.requests'],
 ], function () {
-    Route::post('/settings/{id}', [ProfileController::class, 'updateVisibilitySettings']);
-    Route::get('/settings/{id}', [ProfileController::class, 'getVisibilitySettings']);
+    Route::post('/settings ', [ProfileController::class, 'updateVisibilitySettings']);
+    Route::get('/settings ', [ProfileController::class, 'getVisibilitySettings']);
 });
 Route::group([
     'prefix' => 'social',
@@ -273,28 +273,5 @@ Route::group([
     Route::get('/blocked-users', [FollowController::class, 'blockedUsers']); 
     Route::get('/follow-stats/{userId}', [FollowController::class, 'getFollowStats']);
 });
-Route::group([
-    'prefix' => 'chat',
-    'middleware' => ['api', 'auth:api', 'blacklist', 'throttle.requests'],
-], function () {
-    // Conversations
-    Route::get('/conversations', [App\Http\Controllers\ConversationController::class, 'index']);
-    Route::post('/conversations/get-or-create', [App\Http\Controllers\ConversationController::class, 'getOrCreate']);
-    Route::delete('/conversations/{id}', [App\Http\Controllers\ConversationController::class, 'destroy']);
 
-    // Messages
-    Route::post('/messages/send', [App\Http\Controllers\MessageController::class, 'sendMessage']);
-    Route::get('/messages/{conversationId}', [App\Http\Controllers\MessageController::class, 'getMessages']);
-    Route::post('/messages/{conversationId}/mark-read', [App\Http\Controllers\MessageController::class, 'markAsRead']);
-    Route::get('/messages/unread/count', [App\Http\Controllers\MessageController::class, 'getUnreadCount']);
-    
-    // Delete messages
-    Route::delete('/messages/{messageId}', [App\Http\Controllers\MessageController::class, 'deleteMessage']);
-    Route::delete('/conversations/{conversationId}/messages', [App\Http\Controllers\MessageController::class, 'deleteAllMessages']);
-
-    // Messaging Settings
-    Route::get('/settings', [App\Http\Controllers\MessagingSettingsController::class, 'getSettings']);
-    Route::put('/settings', [App\Http\Controllers\MessagingSettingsController::class, 'updateSettings']);
-    Route::get('/settings/user/{userId}', [App\Http\Controllers\MessagingSettingsController::class, 'getUserSettings']);
-});
 

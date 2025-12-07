@@ -16,3 +16,13 @@ use Illuminate\Support\Facades\Broadcast;
 Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
 });
+
+// Private chat channel for receiving messages
+Broadcast::channel('chat.{userId}', function ($user, $userId) {
+    return (int) $user->id === (int) $userId;
+});
+
+// Public channel for user online status
+Broadcast::channel('user.status', function ($user) {
+    return true; // Anyone can listen to user status updates
+});
