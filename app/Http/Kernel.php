@@ -42,6 +42,7 @@ class Kernel extends HttpKernel
             \Illuminate\Http\Middleware\HandleCors::class,            
             \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\TrackUserOnlineStatus::class,
 
         ],
     ];
@@ -69,5 +70,6 @@ class Kernel extends HttpKernel
         'throttle.requests' => \App\Http\Middleware\ThrottleRequestsMiddleware::class,
         // 'cache.response' => \App\Http\Middleware\CacheResponse::class,
         'admin' => \App\Http\Middleware\AdminMiddleware::class,
+        'manager' => \App\Http\Middleware\ManagerMiddleware::class,
     ];
 }

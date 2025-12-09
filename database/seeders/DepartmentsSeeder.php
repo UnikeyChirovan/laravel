@@ -15,7 +15,8 @@ class DepartmentsSeeder extends Seeder
     {
         DB::table("departments")->insert([
             ["name" =>"Quản Trị" ],
-            ["name" =>"Người Dùng" ]
+            ["name" =>"Người Dùng" ],
+            ["name" =>"Quản Trị" ],
         ]);
     }
 }

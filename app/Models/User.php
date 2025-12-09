@@ -58,6 +58,9 @@ class User extends Authenticatable implements JWTSubject
         'show_address' => 'boolean',
         'private_account' => 'boolean',
         'allow_search' => 'boolean',
+        'is_online' => 'boolean',
+        'last_active_at' => 'datetime',
+        'show_online_status' => 'boolean',
     ];
     
 

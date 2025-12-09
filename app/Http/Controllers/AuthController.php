@@ -30,6 +30,7 @@ class AuthController extends Controller
             'user' => [
                 'id' => $user->id,
                 'nickname'=>$user->nickname,
+                'department_id' => $user->department_id,
             ],
             'isAdmin' => $isAdmin,
             'access_token' => $token,
