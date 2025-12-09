@@ -289,5 +289,31 @@ class ProfileController extends Controller
 
         return response()->json($data);
     }
+        public function getPrivacySettings(Request $request)
+    {
+        $user = $request->user();
+        return response()->json([
+            'private_account' => $user->private_account,
+            'allow_search' => $user->allow_search,
+        ]);
+    }
 
+    public function updatePrivacySettings(Request $request)
+    {
+        $validated = $request->validate([
+            'private_account' => 'required|boolean',
+            'allow_search' => 'required|boolean',
+        ]);
+
+        $user = $request->user();
+        $user->update($validated);
+
+        return response()->json([
+            'message' => 'Cập nhật cài đặt quyền riêng tư thành công',
+            'data' => [
+                'private_account' => $user->private_account,
+                'allow_search' => $user->allow_search,
+            ]
+        ]);
+    }
 }

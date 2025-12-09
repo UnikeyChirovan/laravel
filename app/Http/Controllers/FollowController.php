@@ -149,5 +149,24 @@ class FollowController extends Controller
             'following_count' => $followingCount,
         ]);
     }
+        public function isMutualFollow(Request $request, $id)
+    {
+        $currentUser = $request->user();
 
+        // Kiểm tra current user có follow người kia không
+        $isFollowing = Follow::where('follower_id', $currentUser->id)
+                            ->where('following_id', $id)
+                            ->exists();
+
+        // Kiểm tra người kia có follow current user không
+        $isFollowedBy = Follow::where('follower_id', $id)
+                            ->where('following_id', $currentUser->id)
+                            ->exists();
+
+        return response()->json([
+            'is_mutual' => $isFollowing && $isFollowedBy,
+            'is_following' => $isFollowing,
+            'is_followed_by' => $isFollowedBy
+        ]);
+    }
 }

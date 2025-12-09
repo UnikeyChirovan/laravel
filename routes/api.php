@@ -258,6 +258,8 @@ Route::group([
 ], function () {
     Route::post('/settings/{id}', [ProfileController::class, 'updateVisibilitySettings']);
     Route::get('/settings/{id}', [ProfileController::class, 'getVisibilitySettings']);
+    Route::get('/privacy-settings', [ProfileController::class, 'getPrivacySettings']);
+    Route::put('/privacy-settings', [ProfileController::class, 'updatePrivacySettings']);
 });
 Route::group([
     'prefix' => 'social',
@@ -272,6 +274,7 @@ Route::group([
     Route::get('/followed-users', [FollowController::class, 'followedUsers']);
     Route::get('/blocked-users', [FollowController::class, 'blockedUsers']); 
     Route::get('/follow-stats/{userId}', [FollowController::class, 'getFollowStats']);
+    Route::get('/is-mutual-follow/{id}', [FollowController::class, 'isMutualFollow']);
 });
 Route::group([
     'prefix' => 'chat',
