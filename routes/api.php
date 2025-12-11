@@ -322,6 +322,7 @@ Route::middleware(['auth:api'])->prefix('support')->group(function () {
     
     // Check support online
     Route::get('/check-online', [SupportChatController::class, 'checkSupportOnline']);
+    Route::get('/manage/conversations/{id}/messages', [SupportChatController::class, 'getConversationMessages']);
 });
 
 // Manager/Admin routes

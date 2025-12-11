@@ -17,9 +17,10 @@ class TrackUserOnlineStatus
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (auth()->check()) {
-            $user = auth()->user();
-            
+        // Kiểm tra auth với cả 'web' guard và 'api' guard
+        $user = auth()->user() ?? auth('api')->user();
+        
+        if ($user) {
             // Chỉ track nếu user cho phép hiển thị online status
             if ($user->show_online_status) {
                 $wasOffline = !$user->is_online;

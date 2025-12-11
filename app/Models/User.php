@@ -75,5 +75,49 @@ class User extends Authenticatable implements JWTSubject
         return [];
     }
 
+    public function markAsOnline()
+    {
+        $this->update([
+            'is_online' => true,
+            'last_active_at' => now(),
+        ]);
+
+        // Broadcast online status
+        broadcast(new UserOnlineStatus($this->id, true));
+    }
+
+    /**
+     * Đánh dấu user là offline
+     */
+    public function markAsOffline()
+    {
+        $this->update([
+            'is_online' => false,
+            'last_active_at' => now(),
+        ]);
+
+        // Broadcast offline status
+        broadcast(new UserOnlineStatus($this->id, false));
+    }
+
+    /**
+     * Cập nhật last active time
+     */
+    public function updateLastActive()
+    {
+        $this->update([
+            'last_active_at' => now(),
+        ]);
+    }
+
+    /**
+     * Kiểm tra user có online không
+     */
+    public function isOnline(): bool
+    {
+        // Check is_online flag hoặc last_active_at trong vòng 5 phút
+        return $this->is_online || 
+               ($this->last_active_at && $this->last_active_at->gt(now()->subMinutes(5)));
+    }
 
 }

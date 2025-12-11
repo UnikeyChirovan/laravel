@@ -7,6 +7,7 @@ use App\Models\SupportConversation;
 use App\Models\SupportMessage;
 use App\Models\SupportStat;
 use App\Events\SupportMessageSent;
+use App\Events\SupportConversationResolved;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -73,7 +74,9 @@ class SupportChatController extends Controller
             }
         }
 
-        broadcast(new SupportMessageSent($message))->toOthers();
+        if ($conversation->assigned_to) {
+            broadcast(new SupportMessageSent($message))->toOthers();
+        }
 
         return response()->json(['message' => $this->formatMessage($message)], 201);
     }
@@ -107,7 +110,7 @@ class SupportChatController extends Controller
     public function rateConversation(Request $request, $conversationId)
     {
         $request->validate([
-            'rating' => 'required|integer|min:1|max:5',
+            'rating' => 'required|integer|min:0|max:5',
             'comment' => 'nullable|string|max:1000',
         ]);
 
@@ -118,12 +121,17 @@ class SupportChatController extends Controller
             return response()->json(['message' => 'Invalid request'], 400);
         }
 
-        $conversation->update([
-            'rating' => $request->rating,
-            'rating_comment' => $request->comment,
+        $updateData = [
             'status' => 'closed',
             'closed_at' => now(),
-        ]);
+        ];
+        
+        if ($request->rating > 0) {
+            $updateData['rating'] = $request->rating;
+            $updateData['rating_comment'] = $request->comment;
+        }
+        
+        $conversation->update($updateData);
 
         return response()->json(['message' => 'Rating submitted'], 200);
     }
@@ -162,6 +170,27 @@ class SupportChatController extends Controller
         ], 200);
     }
 
+    public function getConversationMessages($conversationId)
+    {
+        $user = Auth::guard('api')->user();
+        
+        if (!in_array($user->department_id, [1, 3])) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $conversation = SupportConversation::with(['messages' => function($query) {
+            $query->orderBy('created_at', 'asc');
+        }])->findOrFail($conversationId);
+
+        if ($conversation->assigned_to !== $user->id && $user->department_id !== 1) {
+            return response()->json(['message' => 'Not authorized'], 403);
+        }
+
+        return response()->json([
+            'messages' => $conversation->messages->map(fn($m) => $this->formatMessage($m)),
+        ], 200);
+    }
+
     public function claimConversation(Request $request, $conversationId)
     {
         $user = Auth::guard('api')->user();
@@ -190,11 +219,13 @@ class SupportChatController extends Controller
         ]);
 
         $user = Auth::guard('api')->user();
+
         if (!in_array($user->department_id, [1, 3])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         $conversation = SupportConversation::findOrFail($request->conversation_id);
+
         if ($conversation->assigned_to !== $user->id && $user->department_id !== 1) {
             return response()->json(['message' => 'Not assigned'], 403);
         }
@@ -274,6 +305,8 @@ class SupportChatController extends Controller
 
         $conversation->resolve();
 
+        broadcast(new SupportConversationResolved($conversation))->toOthers();
+
         return response()->json(['message' => 'Resolved'], 200);
     }
 
@@ -350,13 +383,13 @@ class SupportChatController extends Controller
     public function checkSupportOnline()
     {
         $onlineSupport = User::whereIn('department_id', [1, 3])
-            ->where(function($query) {
-                $query->whereNotNull('last_seen_at')->where('last_seen_at', '>=', now()->subMinutes(5));
-            })->exists();
+            ->where('is_online', true)
+            ->where('show_online_status', true)
+            ->exists();
 
         return response()->json(['online' => $onlineSupport], 200);
     }
-
+    
     public function getManagers()
     {
         $user = Auth::guard('api')->user();
