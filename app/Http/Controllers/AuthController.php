@@ -257,7 +257,7 @@ class AuthController extends Controller
                 return response()->json(['error' => 'Lỗi không xác định!'], 403);
             }
             Redis::del($key);
-            $newAccessToken =  $this->createAccessToken($user, $tokenUserAgent, $sessionId);
+            $newAccessToken =  $this->createAccessToken($user, $sessionId);
             $newRefreshToken = $this->createRefreshToken($user);
             Redis::setex($key, $Expiration, $newRefreshToken);
             $cookie = cookie('refresh_token', $newRefreshToken, $Expiration, null, null, true, true, 'None');
