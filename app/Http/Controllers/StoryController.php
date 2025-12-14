@@ -35,11 +35,13 @@ class StoryController extends Controller
             'backgrounds' => $backgrounds
         ], 201);
     }
+    
     public function getBackgrounds()
     {
         $backgrounds = BackgroundStory::all();
         return response()->json($backgrounds, 200);
     }
+    
     public function getImage($id)
     {
         try {
@@ -49,6 +51,7 @@ class StoryController extends Controller
             return response()->json(['message' => 'Hình nền không tìm thấy'], 404);
         }
     }
+    
     public function updateBackground(Request $request, $id)
     {
         $request->validate([
@@ -76,33 +79,40 @@ class StoryController extends Controller
             'message' => 'Xóa hình nền thành công!'
         ], 204);
     }
+    
     public function saveSettings(Request $request)
     {
         $request->validate([
             'background_story_id' => 'nullable|exists:background_story,id',
+            'background_mode' => 'nullable|in:none,no-image,with-image', // ĐỔI required thành nullable
             'font_family' => 'required|string|max:255',
             'font_size' => 'required|integer|min:8|max:100',
             'line_height' => 'required|numeric|min:0.5|max:3',
         ]);
+        
         $user = Auth::user();
         if (!$user) {
             return response()->json(['error' => 'Người dùng chưa đăng nhập.'], 401);
         }
+        
         $settings = SettingsStory::updateOrCreate(
             ['user_id' => $user->id],
             [
                 'background_story_id' => $request->background_story_id,
+                'background_mode' => $request->background_mode ?? 'none', // Set default value
                 'font_family' => $request->font_family,
                 'font_size' => $request->font_size,
                 'line_height' => $request->line_height,
                 'hasSettings' => true,
             ]
         );
+        
         return response()->json([
             'message' => 'Cài đặt đã được lưu thành công!',
             'settings' => $settings
         ], 200);
     }
+    
     public function getSettings()
     {
         $user = Auth::user();
@@ -125,6 +135,7 @@ class StoryController extends Controller
     {
         $request->validate([
             'background_story_id' => 'nullable|exists:background_story,id',
+            'background_mode' => 'nullable|in:none,no-image,with-image', // Thêm validation
             'font_family' => 'nullable|string|max:255',
             'font_size' => 'nullable|integer|min:8|max:100',
             'line_height' => 'nullable|numeric|min:0.5|max:3',
@@ -141,8 +152,10 @@ class StoryController extends Controller
         if (!$settings) {
             return response()->json(['error' => 'Cài đặt không tồn tại cho người dùng này.'], 404);
         }
+        
         $settings->update([
             'background_story_id' => $request->background_story_id ?? $settings->background_story_id,
+            'background_mode' => $request->background_mode ?? $settings->background_mode, // Update mode
             'font_family' => $request->font_family ?? $settings->font_family,
             'font_size' => $request->font_size ?? $settings->font_size,
             'line_height' => $request->line_height ?? $settings->line_height,
@@ -154,5 +167,4 @@ class StoryController extends Controller
             'settings' => $settings
         ], 200);
     }
-
 }

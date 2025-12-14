@@ -14,15 +14,18 @@ class SettingsStory extends Model
     protected $fillable = [
         'user_id',
         'background_story_id',
+        'background_mode', // Thêm field mới
         'font_family',
         'font_size',
         'line_height',
         'hasSettings',
     ];
+    
     public function user()
     {
         return $this->belongsTo(User::class);
     }
+    
     public function backgroundStory()
     {
         return $this->belongsTo(BackgroundStory::class, 'background_story_id');
