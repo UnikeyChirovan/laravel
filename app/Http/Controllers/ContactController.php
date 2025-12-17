@@ -35,7 +35,7 @@ class ContactController extends Controller
         $this->sendContactEmail($request->all());
         return response()->json([
             'status' => 'success',
-            'message' => 'Liên hệ đã được gởi thành công!'
+            'message' => 'liên lạc đã được gởi thành công!'
         ], 200);
     }
     private function sendContactEmail($data)
@@ -44,7 +44,7 @@ class ContactController extends Controller
             $message->to('selorson.tcv@gmail.com') 
                 ->subject($data['title']) 
                 ->html('
-                    <h2>Thông tin liên hệ</h2>
+                    <h2>Thông tin liên lạc</h2>
                     <p><strong>Họ tên:</strong> ' . $data['name'] . '</p>
                     <p><strong>Email:</strong> ' . $data['email'] . '</p>
                     <p><strong>Username:</strong> ' . ($data['username'] ?? 'Không có') . '</p>
@@ -77,7 +77,7 @@ class ContactController extends Controller
         if (!$contact) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Liên hệ không tồn tại!'
+                'message' => 'liên lạc không tồn tại!'
             ], 404);
         }
 
@@ -85,7 +85,7 @@ class ContactController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Liên hệ đã được xóa thành công!'
+            'message' => 'liên lạc đã được xóa thành công!'
         ], 200);
     }
 
@@ -106,7 +106,7 @@ class ContactController extends Controller
         try {
             Mail::send([], [], function ($message) use ($request) {
                 $message->to($request->email) 
-                    ->subject('Phản hồi liên hệ từ Selorson Tales') 
+                    ->subject('Phản hồi liên lạc từ Selorson Tales') 
                     ->html(nl2br($request->message)); 
             });
 

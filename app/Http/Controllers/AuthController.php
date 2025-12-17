@@ -95,12 +95,12 @@ class AuthController extends Controller
         $deviceCount = DeviceInfo::where('user_id', $user->id)->count();
         if ($deviceCount >= 2) {
             return response()->json([
-                "message" => "bạn đang đăng nhập trên nhiều thiết bị hoặc trình duyệt, vui lòng đăng xuất 1 tài khoản hoặc liên hệ admin"
+                "message" => "bạn đang đăng nhập trên nhiều thiết bị hoặc trình duyệt, vui lòng đăng xuất 1 tài khoản hoặc liên lạc admin"
             ], 403);
         }
         if ($user->status_id == 2) {
             return response()->json([
-                "message" => "Bạn đang bị tạm khóa, vui lòng liên hệ admin"
+                "message" => "Bạn đang bị tạm khóa, vui lòng liên lạc admin"
             ], 403);
         }
         if ($user->status_id == 3) {

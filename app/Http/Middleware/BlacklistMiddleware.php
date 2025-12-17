@@ -18,7 +18,7 @@ class BlacklistMiddleware
             ->first();
         if ($blacklisted) {
             return response()->json([
-                'message' => $blacklisted->reason ?? 'Bạn đã bị chặn, vui lòng liên hệ quản trị viên để xử lý.'
+                'message' => $blacklisted->reason ?? 'Bạn đã bị chặn, vui lòng liên lạc quản trị viên để xử lý.'
             ], 403);
         }
         return $next($request);

@@ -22,6 +22,10 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\VideoManagerController;
 use App\Http\Controllers\FutureProjectController;
 use App\Http\Controllers\UserNotificationController;
+use App\Http\Controllers\ConversationController;
+use App\Http\Controllers\MessageController;
+use App\Http\Controllers\MessagingSettingsController;
+use App\Http\Controllers\SupportChatController;
 
 
 
@@ -62,21 +66,25 @@ Route::group([
     'prefix' => 'users',
     'middleware' => ['api', 'auth:api', 'blacklist', 'throttle.requests'],
 ], function () {
-    Route::get('/create', [UserController::class, 'create'])->name('users.create');
+    Route::get('/create', [UserController::class, 'create'])->name('users.create')->middleware('admin');
     Route::get('/', [UserController::class, 'index'])->name('users.index');
     Route::get('/explore', [UserController::class, 'explore'])->name('users.explore');
-    Route::post('/', [UserController::class, 'store'])->name('users.store');
-    Route::get('/{id}/edit', [UserController::class, 'edit'])->name('users.edit');
-    Route::put('/{id}', [UserController::class, 'update'])->name('users.update');
-    Route::delete('/{id}', [UserController::class, 'destroy'])->name('users.destroy');
-    Route::get('/device-info', [UserController::class, 'getAllDeviceInfo'])->name('users.deviceInfo');
-    Route::get('/blacklist', [UserController::class, 'getAllBlacklist'])->name('users.blacklist');
-    Route::post('/transfer-to-blacklist/{userId}', [UserController::class, 'transferToBlacklist'])->name('users.transferToBlacklist');
-    Route::delete('/blacklist/{id}', [UserController::class, 'deleteFromBlacklist'])->name('users.deleteFromBlacklist');
-    Route::get('/request-logs', [UserController::class, 'getAllRequestLogs'])->name('users.requestLogs');
-    Route::delete('/request-log/{id}', [UserController::class, 'deleteRequestLog'])->name('users.deleteRequestLog');
-    Route::delete('/request-logs', [UserController::class, 'deleteAllRequestLogs'])->name('users.deleteAllRequestLogs');
-    Route::post('/transfer-from-request-log/{id}', [UserController::class, 'transferToBlacklistFromRequestLog'])->name('users.transferFromRequestLog');
+    Route::post('/', [UserController::class, 'store'])->name('users.store')->middleware('admin');
+    Route::get('/{id}/edit', [UserController::class, 'edit'])->name('users.edit')->middleware('admin');
+    Route::put('/{id}', [UserController::class, 'update'])->name('users.update')->middleware('admin');
+    Route::delete('/{id}', [UserController::class, 'destroy'])->name('users.destroy')->middleware('admin');
+    Route::get('/device-info', [UserController::class, 'getAllDeviceInfo'])->name('users.deviceInfo')->middleware('admin');
+    Route::get('/blacklist', [UserController::class, 'getAllBlacklist'])->name('users.blacklist')->middleware('admin');
+    Route::post('/transfer-to-blacklist/{userId}', [UserController::class, 'transferToBlacklist'])->name('users.transferToBlacklist')->middleware('admin');
+    Route::delete('/blacklist/{id}', [UserController::class, 'deleteFromBlacklist'])->name('users.deleteFromBlacklist')->middleware('admin');
+    Route::get('/request-logs', [UserController::class, 'getAllRequestLogs'])->name('users.requestLogs')->middleware('admin');
+    Route::delete('/request-log/{id}', [UserController::class, 'deleteRequestLog'])->name('users.deleteRequestLog')->middleware('admin');
+    Route::delete('/request-logs', [UserController::class, 'deleteAllRequestLogs'])->name('users.deleteAllRequestLogs')->middleware('admin');
+    Route::post('/transfer-from-request-log/{id}', [UserController::class, 'transferToBlacklistFromRequestLog'])->name('users.transferFromRequestLog')->middleware('admin');
+    Route::get('/{userId}/online-status', [UserController::class, 'getOnlineStatus']);
+    Route::post('/online-status/bulk', [UserController::class, 'getBulkOnlineStatus']);
+    Route::post('/set-online', [UserController::class, 'setOnline']);
+    Route::post('/set-offline', [UserController::class, 'setOffline']);
 });
 
 
@@ -256,8 +264,10 @@ Route::group([
     'prefix' => 'private',
     'middleware' => ['api', 'auth:api', 'blacklist', 'throttle.requests'],
 ], function () {
-    Route::post('/settings ', [ProfileController::class, 'updateVisibilitySettings']);
-    Route::get('/settings ', [ProfileController::class, 'getVisibilitySettings']);
+    Route::post('/settings/{id}', [ProfileController::class, 'updateVisibilitySettings']);
+    Route::get('/settings/{id}', [ProfileController::class, 'getVisibilitySettings']);
+    Route::get('/privacy-settings', [ProfileController::class, 'getPrivacySettings']);
+    Route::put('/privacy-settings', [ProfileController::class, 'updatePrivacySettings']);
 });
 Route::group([
     'prefix' => 'social',
@@ -272,6 +282,79 @@ Route::group([
     Route::get('/followed-users', [FollowController::class, 'followedUsers']);
     Route::get('/blocked-users', [FollowController::class, 'blockedUsers']); 
     Route::get('/follow-stats/{userId}', [FollowController::class, 'getFollowStats']);
+    Route::get('/is-mutual-follow/{id}', [FollowController::class, 'isMutualFollow']);
+});
+Route::group([
+    'prefix' => 'chat',
+    'middleware' => ['api', 'auth:api', 'blacklist', 'throttle.requests'],
+], function () {
+    Route::get('/conversations', [ConversationController::class, 'index']);
+    Route::post('/conversations/get-or-create', [ConversationController::class, 'getOrCreate']);
+    Route::delete('/conversations/{id}', [ConversationController::class, 'destroy']);
+
+    Route::post('/messages/send', [MessageController::class, 'sendMessage']);
+    Route::get('/messages/{conversationId}', [MessageController::class, 'getMessages']);
+    Route::post('/messages/{conversationId}/mark-read', [MessageController::class, 'markAsRead']);
+    Route::get('/messages/unread/count', [MessageController::class, 'getUnreadCount']);
+    
+    Route::delete('/messages/{messageId}', [MessageController::class, 'deleteMessage']);
+    Route::delete('/conversations/{conversationId}/messages', [MessageController::class, 'deleteAllMessages']);
+
+    Route::get('/settings', [MessagingSettingsController::class, 'getSettings']);
+    Route::put('/settings', [MessagingSettingsController::class, 'updateSettings']);
+    Route::get('/settings/user/{userId}', [MessagingSettingsController::class, 'getUserSettings']);
+});
+Route::middleware(['auth:api'])->prefix('support')->group(function () {
+    // Get or create conversation
+    Route::get('/conversation', [SupportChatController::class, 'getOrCreateConversation']);
+    
+    // Send message
+    Route::post('/messages/send', [SupportChatController::class, 'sendMessage']);
+    
+    // Mark as read
+    Route::post('/conversations/{id}/mark-read', [SupportChatController::class, 'markAsRead']);
+    
+    // Get unread count
+    Route::get('/unread-count', [SupportChatController::class, 'getUnreadCount']);
+    
+    // Rate conversation
+    Route::post('/conversations/{id}/rate', [SupportChatController::class, 'rateConversation']);
+    
+    // Check support online
+    Route::get('/check-online', [SupportChatController::class, 'checkSupportOnline']);
+    Route::get('/manage/conversations/{id}/messages', [SupportChatController::class, 'getConversationMessages']);
 });
 
+// Manager/Admin routes
+Route::middleware(['auth:api', 'manager'])->prefix('support/manage')->group(function () {
+    // Get conversations list
+    Route::get('/conversations', [SupportChatController::class, 'getConversations']);
+    
+    // Claim conversation
+    Route::post('/conversations/{id}/claim', [SupportChatController::class, 'claimConversation']);
+    
+    // Send message as support
+    Route::post('/messages/send', [SupportChatController::class, 'sendManagerMessage']);
+    
+    // Mark as read
+    Route::post('/conversations/{id}/mark-read', [SupportChatController::class, 'markAsReadByManager']);
+    
+    // Transfer conversation
+    Route::post('/conversations/{id}/transfer', [SupportChatController::class, 'transferConversation']);
+    
+    // Resolve conversation
+    Route::post('/conversations/{id}/resolve', [SupportChatController::class, 'resolveConversation']);
+    
+    // Get manager statistics
+    Route::get('/statistics/manager/{id}', [SupportChatController::class, 'getManagerStatistics']);
+    
+    // Get managers list
+    Route::get('/managers', [SupportChatController::class, 'getManagers']);
+});
 
+// Admin only routes
+Route::middleware(['auth:api', 'admin'])->prefix('support/admin')->group(function () {
+    // Get overall statistics
+    Route::get('/statistics', [SupportChatController::class, 'getStatistics']);
+});
+Broadcast::routes(['middleware' => ['auth:api']]);

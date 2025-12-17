@@ -119,7 +119,7 @@ class UserController extends Controller
                 Log::error('Lỗi gởi email xác thực: ' . $e->getMessage());
                 // Không xóa user, chỉ log lỗi
                 return response()->json([
-                    "message" => "Tạo tài khoản thành công nhưng không thể gởi email xác thực. Vui lòng liên hệ admin."
+                    "message" => "Tạo tài khoản thành công nhưng không thể gởi email xác thực. Vui lòng liên lạc admin."
                 ], 201);
             }
 
