@@ -95,7 +95,7 @@ class UserController extends Controller
         $user["password"] = Hash::make($request["password"]);
         $newUser = User::create($user);
 
-        // Nếu status_id = 5 (chưa xác thực), gửi email xác nhận
+        // Nếu status_id = 5 (chưa xác thực), gởi email xác nhận
         if ($request->status_id == 5) {
             // Xóa token cũ nếu có
             EmailVerification::where('user_id', $newUser->id)->delete();
@@ -109,22 +109,22 @@ class UserController extends Controller
 
             $verificationUrl = url('/api/auth/verify-email?token=' . $verificationToken);
 
-            // Gửi email xác thực
+            // gởi email xác thực
             try {
                 Mail::send('emails.verify', ['url' => $verificationUrl, 'user' => $newUser], function ($message) use ($newUser) {
                     $message->to($newUser->email);
                     $message->subject('Xác thực tài khoản của bạn');
                 });
             } catch (\Exception $e) {
-                Log::error('Lỗi gửi email xác thực: ' . $e->getMessage());
+                Log::error('Lỗi gởi email xác thực: ' . $e->getMessage());
                 // Không xóa user, chỉ log lỗi
                 return response()->json([
-                    "message" => "Tạo tài khoản thành công nhưng không thể gửi email xác thực. Vui lòng liên hệ admin."
+                    "message" => "Tạo tài khoản thành công nhưng không thể gởi email xác thực. Vui lòng liên hệ admin."
                 ], 201);
             }
 
             return response()->json([
-                "message" => "Tạo tài khoản thành công! Email xác thực đã được gửi đến " . $newUser->email
+                "message" => "Tạo tài khoản thành công! Email xác thực đã được gởi đến " . $newUser->email
             ], 201);
         }
 
@@ -226,7 +226,7 @@ class UserController extends Controller
 
             $verificationUrl = url('/api/auth/verify-email?token=' . $verificationToken);
 
-            // Gửi email xác thực
+            // gởi email xác thực
             try {
                 Mail::send('emails.verify', ['url' => $verificationUrl, 'user' => $user], function ($message) use ($user) {
                     $message->to($user->email);
@@ -234,12 +234,12 @@ class UserController extends Controller
                 });
 
                 return response()->json([
-                    "message" => "Cập nhật thành công! Email xác thực đã được gửi đến " . $user->email
+                    "message" => "Cập nhật thành công! Email xác thực đã được gởi đến " . $user->email
                 ], 200);
             } catch (\Exception $e) {
-                Log::error('Lỗi gửi email xác thực: ' . $e->getMessage());
+                Log::error('Lỗi gởi email xác thực: ' . $e->getMessage());
                 return response()->json([
-                    "message" => "Cập nhật thành công nhưng không thể gửi email xác thực. Vui lòng thử lại sau."
+                    "message" => "Cập nhật thành công nhưng không thể gởi email xác thực. Vui lòng thử lại sau."
                 ], 200);
             }
         }

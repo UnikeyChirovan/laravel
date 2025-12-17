@@ -35,7 +35,7 @@ class ContactController extends Controller
         $this->sendContactEmail($request->all());
         return response()->json([
             'status' => 'success',
-            'message' => 'Liên hệ đã được gửi thành công!'
+            'message' => 'Liên hệ đã được gởi thành công!'
         ], 200);
     }
     private function sendContactEmail($data)
@@ -112,12 +112,12 @@ class ContactController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Phản hồi đã được gửi thành công!'
+                'message' => 'Phản hồi đã được gởi thành công!'
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Gửi email thất bại!',
+                'message' => 'gởi email thất bại!',
             ], 500);
         }
     }

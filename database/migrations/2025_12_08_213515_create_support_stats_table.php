@@ -14,7 +14,7 @@ return new class extends Migration
             $table->unsignedBigInteger('manager_id'); // Manager/Admin xử lý
             $table->integer('response_time')->nullable(); // Thời gian phản hồi đầu tiên (giây)
             $table->integer('resolution_time')->nullable(); // Thời gian giải quyết (giây)
-            $table->integer('message_count')->default(0); // Số tin nhắn đã gửi
+            $table->integer('message_count')->default(0); // Số tin nhắn đã gởi
             $table->boolean('was_transferred')->default(false); // Có được chuyển tiếp không
             $table->unsignedBigInteger('transferred_from')->nullable(); // Từ manager nào
             $table->timestamp('claimed_at')->nullable(); // Thời điểm claim

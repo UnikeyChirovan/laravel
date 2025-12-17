@@ -35,7 +35,7 @@ class MessageController extends Controller
             ->exists();
 
         if ($isBlocked) {
-            return response()->json(['message' => 'Không thể gửi tin nhắn cho người dùng này.'], 403);
+            return response()->json(['message' => 'Không thể gởi tin nhắn cho người dùng này.'], 403);
         }
 
         $receiverSettings = \App\Models\UserMessagingSetting::getOrCreateForUser($receiverId);

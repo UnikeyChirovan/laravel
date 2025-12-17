@@ -132,7 +132,7 @@ class ProfileController extends Controller
                     $message->subject('Xác thực địa chỉ email của bạn');
                 });
             } catch (\Exception $e) {
-                return response()->json(['message' => 'Không thể gửi email xác thực!'], 500);
+                return response()->json(['message' => 'Không thể gởi email xác thực!'], 500);
             }
         }
         $user->update([

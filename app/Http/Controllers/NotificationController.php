@@ -18,7 +18,7 @@ class NotificationController extends Controller
 
         $this->sendNotificationToSubscribers($notification);
 
-        return response()->json(['success' => 'Thông báo đã được tạo và gửi!']);
+        return response()->json(['success' => 'Thông báo đã được tạo và gởi!']);
     }
 
     private function sendNotificationToSubscribers($notification)

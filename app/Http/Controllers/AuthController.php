@@ -214,14 +214,14 @@ class AuthController extends Controller
 
         $verificationUrl = url('/api/auth/verify-email?token=' . $verificationToken);
 
-        // Gửi email xác thực
+        // gởi email xác thực
         try {
             Mail::send('emails.verify', ['url' => $verificationUrl, 'user' => $user], function ($message) use ($user) {
                 $message->to($user->email);
                 $message->subject('Xác thực tài khoản của bạn');
             });
         } catch (\Exception $e) {
-            // Nếu có lỗi trong quá trình gửi email, xóa người dùng đã tạo
+            // Nếu có lỗi trong quá trình gởi email, xóa người dùng đã tạo
             $user->delete();
             return response()->json([
                 "message" => "Đăng ký thất bại! Vui lòng thử lại."
@@ -447,9 +447,9 @@ class AuthController extends Controller
                 $message->subject('Đặt lại mật khẩu của bạn');
             });
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Không thể gửi email. Vui lòng thử lại sau.'], 500);
+            return response()->json(['message' => 'Không thể gởi email. Vui lòng thử lại sau.'], 500);
         }
-        return response()->json(['message' => 'Chúng tôi đã gửi đường dẫn đặt lại mật khẩu đến email của bạn.'], 200);
+        return response()->json(['message' => 'Chúng tôi đã gởi đường dẫn đặt lại mật khẩu đến email của bạn.'], 200);
     }
 
 
