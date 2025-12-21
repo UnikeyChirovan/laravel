@@ -12,14 +12,14 @@ use Intervention\Image\ImageManagerStatic as Image;
 class UploadController extends Controller
 {
     public function uploadAvatar(Request $request)
-        {
+    {
         $user = Auth::user();
         $request->validate([
-            'file' => 'required|image|mimes:jpg,png,jpeg,gif|max:2048', 
-            'height' => 'required|numeric', 
-            'width' => 'required|numeric',   
-            'left' => 'required|numeric',    
-            'top' => 'required|numeric',   
+            'file' => 'required|image|mimes:jpg,png,jpeg,gif|max:2048',
+            'height' => 'required|numeric',
+            'width' => 'required|numeric',
+            'left' => 'required|numeric',
+            'top' => 'required|numeric',
         ]);
 
         if ($request->hasFile('file')) {
@@ -27,81 +27,98 @@ class UploadController extends Controller
                 $file = $request->file('file');
                 $filename = 'avatar_' . time() . '.' . $file->getClientOriginalExtension();
                 $image = Image::make($file);
+                
+                // Crop avatar
                 $image->crop(
                     (int) $request->input('width'),
                     (int) $request->input('height'),
                     (int) $request->input('left'),
                     (int) $request->input('top')
                 );
+                
                 $path = "avatars/{$user->id}/{$filename}";
                 Storage::disk('public')->put($path, (string) $image->encode());
+                
+                // Delete old avatar
                 if ($user->avatar) {
                     Storage::disk('public')->delete("avatars/{$user->id}/" . $user->avatar);
                 }
+                
                 $user->avatar = $filename;
                 $user->save();
+                
                 $url = Storage::url($path);
                 return response()->json(['url' => $url], 200);
             } catch (\Exception $e) {
                 return response()->json(['error' => 'Lỗi khi upload avatar: ' . $e->getMessage()], 500);
             }
         }
+        
         return response()->json(['error' => 'Không có tệp nào được tải lên'], 400);
-        }
+    }
 
     public function uploadCover(Request $request)
     {
         $user = Auth::user();
         $request->validate([
-            'file' => 'required|image|mimes:jpg,png,jpeg,gif|max:2048',
-            'position' => 'required|numeric', 
+            'file' => 'required|image|mimes:jpg,png,jpeg,gif|max:5120', // 5MB max
+            'height' => 'required|numeric',
+            'width' => 'required|numeric',
+            'left' => 'required|numeric',
+            'top' => 'required|numeric',
         ]);
 
         if ($request->hasFile('file')) {
             try {
                 $file = $request->file('file');
                 $filename = 'cover_' . time() . '.' . $file->getClientOriginalExtension();
-                $path = $file->storeAs("covers/{$user->id}", $filename, 'public');
+                $image = Image::make($file);
+                
+                // Crop cover
+                $image->crop(
+                    (int) $request->input('width'),
+                    (int) $request->input('height'),
+                    (int) $request->input('left'),
+                    (int) $request->input('top')
+                );
+                
+                // Resize to optimal dimensions (1200x400 for cover)
+                $image->resize(1200, 400, function ($constraint) {
+                    $constraint->aspectRatio();
+                    $constraint->upsize();
+                });
+                
+                $path = "covers/{$user->id}/{$filename}";
+                Storage::disk('public')->put($path, (string) $image->encode());
+                
+                // Delete old cover
                 if ($user->cover) {
                     Storage::disk('public')->delete("covers/{$user->id}/" . $user->cover);
                 }
+                
                 $user->cover = $filename;
-                $user->cover_position = $request->position;
                 $user->save();
+                
                 $url = Storage::url($path);
-                return response()->json(['url' => $url, 'positionY' => $user->cover_position], 200);
+                return response()->json(['url' => $url], 200);
             } catch (\Exception $e) {
                 return response()->json(['error' => 'Lỗi khi upload cover: ' . $e->getMessage()], 500);
             }
         }
+        
         return response()->json(['error' => 'Không có tệp nào được tải lên'], 400);
     }
-    public function updateCoverPosition(Request $request)
-    {
-        $user = Auth::user();
-        $request->validate([
-            'position' => 'required|numeric',
-        ]);
 
-        try {
-            $user->cover_position = $request->position;
-            $user->save();
-
-            return response()->json(['positionY' => $user->cover_position], 200);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Lỗi khi cập nhật vị trí cover: ' . $e->getMessage()], 500);
-        }
-    }
-     public function deleteAvatar($id)
+    public function deleteAvatar($id)
     {
         $user = User::findOrFail($id);
         if ($user->avatar) {
             Storage::disk('public')->delete("avatars/{$id}/{$user->avatar}");
             $user->avatar = null;
             $user->save();
-            return response()->json(['message' => 'Avatar deleted successfully']);
+            return response()->json(['message' => 'Avatar đã được xóa thành công']);
         }
-        return response()->json(['message' => 'No avatar to delete'], 404);
+        return response()->json(['message' => 'Không có avatar để xóa'], 404);
     }
 
     public function deleteCover($id)
@@ -111,13 +128,11 @@ class UploadController extends Controller
             Storage::disk('public')->delete("covers/{$id}/{$user->cover}");
             $user->cover = null;
             $user->save();
-            return response()->json(['message' => 'Cover deleted successfully']);
+            return response()->json(['message' => 'Cover đã được xóa thành công']);
         }
-        return response()->json(['message' => 'No cover to delete'], 404);
+        return response()->json(['message' => 'Không có cover để xóa'], 404);
     }
-
-    // admin
-    public function createChapter(Request $request)
+        public function createChapter(Request $request)
     {
         $request->validate([
             'chapter_number' => 'required|integer',

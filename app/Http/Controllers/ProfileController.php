@@ -25,8 +25,6 @@ class ProfileController extends Controller
             'username' => $user->username,
             'avatar' => $user->avatar,
             'cover' => $user->cover,
-            'avatar_position' => $user->avatar_position,
-            'cover_position' => $user->cover_position,
         ];
 
         if ($user->show_email) {
@@ -165,43 +163,6 @@ class ProfileController extends Controller
     }
 
 
-    public function updatePosition(Request $request, $id)
-    {
-        $token = $request->bearerToken();
-
-        if ($token) {
-            try {
-                $payload = JWTAuth::setToken($token)->getPayload();
-                $userID = $payload->get('id');
-                $isAdmin = $payload->get('isAdmin');
-                if ($userID != $id && !$isAdmin) {
-                    return response()->json(['message' => 'Không được phép cập nhật thông tin người dùng khác!'], 403);
-                }
-            } catch (\Exception $e) {
-                return response()->json(['message' => 'Cập nhật người dùng không hợp lệ!'], 403);
-            }
-        } else {
-            return response()->json(['message' => 'Token không hợp lệ!'], 403);
-        }
-        $validator = Validator::make($request->all(), [
-            'avatar_position' => 'nullable|integer',
-            'cover_position' => 'nullable|integer',
-        ], [
-            'avatar_position.integer' => 'Vị trí avatar phải là số nguyên.',
-            'cover_position.integer' => 'Vị trí cover phải là số nguyên.',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-        $user = User::findOrFail($id);
-        $user->avatar_position = $request->input('avatar_position', $user->avatar_position);
-        $user->cover_position = $request->input('cover_position', $user->cover_position);
-        $user->save();
-        return response()->json(['message' => 'Vị trí avatar và cover đã được cập nhật thành công!'], 200);
-    }
-
-
     public function getVisibilitySettings(Request $request)
     {
         $user = $request->user();
@@ -258,8 +219,6 @@ class ProfileController extends Controller
             'username' => $user->username,
             'avatar' => $user->avatar,
             'cover' => $user->cover,
-            'avatar_position' => $user->avatar_position,
-            'cover_position' => $user->cover_position,
         ];
 
         if ($user->show_email) {

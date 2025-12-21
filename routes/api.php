@@ -94,7 +94,6 @@ Route::group([
 ], function () {
     Route::post('/upload/avatar', [UploadController::class, 'uploadAvatar']);
     Route::post('/upload/cover', [UploadController::class, 'uploadCover']);
-    Route::patch('/update/cover-position', [UploadController::class, 'updateCoverPosition']);
     Route::delete('/{id}/avatar', [UploadController::class, 'deleteAvatar']);
     Route::delete('/{id}/cover', [UploadController::class, 'deleteCover']);
 
@@ -106,7 +105,6 @@ Route::group([
     Route::get('/{id}', [ProfileController::class, 'show'])->name('users.showprofile');
     Route::get('/{id}/edit', [ProfileController::class, 'edit'])->name('users.editprofile');
     Route::put('/{id}', [ProfileController::class, 'update'])->name('users.updateprofile');
-    Route::put('/{id}/position', [ProfileController::class, 'updatePosition']);
 });
 
 Route::prefix('story')->middleware(['api', 'auth:api'])->group(function () {
