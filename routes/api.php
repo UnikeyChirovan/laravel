@@ -26,6 +26,7 @@ use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MessagingSettingsController;
 use App\Http\Controllers\SupportChatController;
+use App\Http\Controllers\CommentController;
 
 
 
@@ -356,3 +357,16 @@ Route::middleware(['auth:api', 'admin'])->prefix('support/admin')->group(functio
     Route::get('/statistics', [SupportChatController::class, 'getStatistics']);
 });
 Broadcast::routes(['middleware' => ['auth:api']]);
+
+// comment
+Route::middleware('auth:api')->group(function () {
+    // Comments
+    Route::prefix('comments')->group(function () {
+        Route::get('/chapter/{chapterId}', [CommentController::class, 'getChapterComments']);
+        Route::get('/episode/{episodeId}', [CommentController::class, 'getEpisodeComments']);
+        Route::post('/', [CommentController::class, 'store']);
+        Route::put('/{id}', [CommentController::class, 'update']);
+        Route::delete('/{id}', [CommentController::class, 'destroy']);
+        Route::post('/count', [CommentController::class, 'getCommentsCount']);
+    });
+});
