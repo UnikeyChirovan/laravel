@@ -27,6 +27,7 @@ use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MessagingSettingsController;
 use App\Http\Controllers\SupportChatController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\MusicController;
 
 
 
@@ -369,4 +370,37 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('/{id}', [CommentController::class, 'destroy']);
         Route::post('/count', [CommentController::class, 'getCommentsCount']);
     });
+});
+// ========== MUSIC ROUTES (USER) ==========
+Route::group([
+    'prefix' => 'music',
+    'middleware' => ['api', 'auth:api', 'blacklist', 'throttle.requests'],
+], function () {
+    // Public endpoints (albums & tracks)
+    Route::get('/albums', [MusicController::class, 'getAlbums']);
+    Route::get('/albums/{albumId}/tracks', [MusicController::class, 'getAlbumTracks']);
+    
+    // Favorites
+    Route::get('/favorites', [MusicController::class, 'getFavorites']);
+    Route::post('/favorites', [MusicController::class, 'addFavorite']);
+    Route::delete('/favorites/{trackId}', [MusicController::class, 'removeFavorite']);
+    Route::put('/favorites/reorder', [MusicController::class, 'reorderFavorites']);
+});
+
+// ========== MUSIC ROUTES (ADMIN) ==========
+Route::group([
+    'prefix' => 'admin/music',
+    'middleware' => ['api', 'auth:api', 'admin', 'throttle.requests'],
+], function () {
+    // Albums management
+    Route::get('/albums', [MusicController::class, 'adminGetAlbums']);
+    Route::post('/albums', [MusicController::class, 'createAlbum']);
+    Route::put('/albums/{id}', [MusicController::class, 'updateAlbum']);
+    Route::delete('/albums/{id}', [MusicController::class, 'deleteAlbum']);
+    
+    // Tracks management
+    Route::get('/tracks', [MusicController::class, 'adminGetTracks']);
+    Route::post('/tracks', [MusicController::class, 'createTrack']);
+    Route::put('/tracks/{id}', [MusicController::class, 'updateTrack']);
+    Route::delete('/tracks/{id}', [MusicController::class, 'deleteTrack']);
 });
