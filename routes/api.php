@@ -159,6 +159,8 @@ Route::group([
     Route::get('/{id}', [UserNotificationController::class, 'show']);
     Route::put('/{id}/text', [UserNotificationController::class, 'updateText'])->middleware('admin');
     Route::delete('/{id}', [UserNotificationController::class, 'destroy'])->middleware('admin');
+     Route::get('/{id}/vote/results', [UserNotificationController::class, 'getVoteResults']);
+    Route::post('/{id}/vote', [UserNotificationController::class, 'submitVote'])->middleware('auth:api');
 });
 Route::group([
     'prefix' => 'image-manager',
