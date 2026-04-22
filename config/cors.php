@@ -10,7 +10,7 @@ return [
 ],
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['*'],
-    'exposed_headers' => ['Authorization', 'Set-Cookie'],
+    'exposed_headers' => ['Authorization', 'Set-Cookie', 'Content-Range', 'Accept-Ranges', 'Content-Length'],
     'max_age' => 0,
     'supports_credentials' => true,
 ];

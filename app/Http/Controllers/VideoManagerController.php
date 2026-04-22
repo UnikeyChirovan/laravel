@@ -169,4 +169,58 @@ class VideoManagerController extends Controller
         return response()->json($video, 200);
     }
 
+    /**
+     * Stream video with HTTP Range Request support for seeking.
+     */
+    public function streamVideo($id)
+    {
+        $video = VideoManager::findOrFail($id);
+        $path = storage_path('app/public/' . $video->video_path);
+
+        if (!file_exists($path)) {
+            return response()->json(['message' => 'File video không tồn tại'], 404);
+        }
+
+        $fileSize = filesize($path);
+        $mimeType = mime_content_type($path) ?: 'video/mp4';
+
+        // Check for Range header
+        $request = request();
+        $range = $request->header('Range');
+
+        if ($range) {
+            // Parse Range header
+            preg_match('/bytes=(\d+)-(\d*)/', $range, $matches);
+            $start = intval($matches[1]);
+            $end = isset($matches[2]) && $matches[2] !== '' ? intval($matches[2]) : $fileSize - 1;
+
+            // Validate range
+            if ($start > $end || $start >= $fileSize) {
+                return response('', 416)->header('Content-Range', "bytes */$fileSize");
+            }
+
+            $length = $end - $start + 1;
+
+            $file = fopen($path, 'rb');
+            fseek($file, $start);
+            $data = fread($file, $length);
+            fclose($file);
+
+            return response($data, 206, [
+                'Content-Type' => $mimeType,
+                'Content-Length' => $length,
+                'Content-Range' => "bytes $start-$end/$fileSize",
+                'Accept-Ranges' => 'bytes',
+                'Cache-Control' => 'no-cache',
+            ]);
+        }
+
+        // No Range header — return full file with Accept-Ranges
+        return response()->file($path, [
+            'Content-Type' => $mimeType,
+            'Accept-Ranges' => 'bytes',
+            'Content-Length' => $fileSize,
+        ]);
+    }
+
 }

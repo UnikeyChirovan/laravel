@@ -250,6 +250,7 @@ Route::group([
     Route::post('/user-episode', [UserChapterController::class, 'saveOrUpdateCurrentEpisode']); 
     Route::get('/user-episode', [UserChapterController::class, 'getLastWatchEpisode']); 
     Route::get('/guest-episode/{id}', [UserChapterController::class, 'getGuestLastWatchEpisode']); 
+    Route::get('/stream/{id}', [VideoManagerController::class, 'streamVideo']);
     Route::get('/{id}', [VideoManagerController::class, 'getVideo']);
     Route::put('/{id}', [VideoManagerController::class, 'updateVideo'])->middleware('admin');
     Route::delete('/{id}', [VideoManagerController::class, 'deleteVideo'])->middleware('admin');
