@@ -9,11 +9,10 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
+    public function up()
     {
         Schema::table('users', function (Blueprint $table) {
-         $table->foreignId('department_id')->constrained('departments');
-         $table->foreignId('status_id')->constrained('users_status');
+            $table->timestamp('last_seen_at')->nullable();
         });
     }
 
@@ -23,10 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropForeign('users_department_id_foreign');
-            $table->dropForeign('users_status_id_foreign');
-
-            $table->dropColumn(['department_id', 'status_id']);
+            //
         });
     }
 };

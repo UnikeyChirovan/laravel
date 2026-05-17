@@ -2,29 +2,408 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\VoteController;
+use App\Http\Controllers\StoryController;
+use App\Http\Controllers\FollowController;
+use App\Http\Controllers\UploadController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\FeatureController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SectionController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\HeroSlideController;
+use App\Http\Controllers\NewsletterController;
+use App\Http\Controllers\CompanyInfoController;
+use App\Http\Controllers\UserChapterController;
+use App\Http\Controllers\ImageManagerController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\VideoManagerController;
+use App\Http\Controllers\FutureProjectController;
+use App\Http\Controllers\UserNotificationController;
+use App\Http\Controllers\ConversationController;
+use App\Http\Controllers\MessageController;
+use App\Http\Controllers\MessagingSettingsController;
+use App\Http\Controllers\SupportChatController;
+use App\Http\Controllers\CommentController;
+use App\Http\Controllers\MusicController;
 
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "api" middleware group. Make something great!
-|
-*/
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+Route::options('/{any}', function (Request $request) {
+    return response()->json([], 204);
+})->where('any', '.*');
+
+// Authentication
+Route::group([
+    'prefix' => 'auth',
+    'middleware' => ['api', 'throttle.requests'],
+], function () {
+    Route::post('/register', [AuthController::class, 'register'])->name('auth.register');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('blacklist')->name('auth.login');
+    Route::post('/logout', [AuthController::class, 'logout'])->name('auth.logout');
+    Route::post('/force-logout', [AuthController::class, 'forceLogout'])->name('auth.forceLogout');
+    Route::post('/super-force-logout', [AuthController::class, 'superForceLogout']);
+    Route::middleware('auth:api')->delete('/delete-account', [AuthController::class, 'selfDeleteAccount']);
+    Route::get('/verify-email', [AuthController::class, 'verifyEmail'])->name('auth.verifyEmail');
+    Route::post('/password-reset-request', [AuthController::class, 'sendResetLinkEmail'])->name('auth.passwordResetRequest');
+    Route::post('/password-reset', [AuthController::class, 'resetPassword'])->name('auth.passwordReset');
+    Route::post('/refresh', [AuthController::class, 'refreshToken'])->name('auth.refreshToken');
+});
+Route::group([
+    'prefix' => 'noauth',
+    'middleware' => ['api', 'throttle.requests'],
+], function () {
+    Route::post('/contact', [ContactController::class, 'store']);
+    Route::get('/contacts', [ContactController::class, 'index']);
+    Route::delete('/contacts/{id}', [ContactController::class, 'destroy']);
+    Route::post('/reply-email', [ContactController::class, 'reply']);
+
+
 });
 
-Route::get('/user/{id}', [UserController::class, 'show']);
-Route::get('/users', [UserController::class, 'index']);
-Route::get('/users/create', [UserController::class, 'create']);
-Route::post('/users', [UserController::class, 'store']);
-Route::get('/users/{id}/edit', [UserController::class, 'edit']);
-Route::put('/users/{id}', [UserController::class, 'update']);
-Route::post('/login', [UserController::class, 'login']);
-Route::delete('/users/{id}', [UserController::class, 'destroy']);
+// User
+Route::group([
+    'prefix' => 'users',
+    'middleware' => ['api', 'auth:api', 'blacklist', 'throttle.requests'],
+], function () {
+    Route::get('/create', [UserController::class, 'create'])->name('users.create')->middleware('admin');
+    Route::get('/', [UserController::class, 'index'])->name('users.index');
+    Route::get('/explore', [UserController::class, 'explore'])->name('users.explore');
+    Route::post('/', [UserController::class, 'store'])->name('users.store')->middleware('admin');
+    Route::get('/{id}/edit', [UserController::class, 'edit'])->name('users.edit')->middleware('admin');
+    Route::put('/{id}', [UserController::class, 'update'])->name('users.update')->middleware('admin');
+    Route::delete('/{id}', [UserController::class, 'destroy'])->name('users.destroy')->middleware('admin');
+    Route::get('/device-info', [UserController::class, 'getAllDeviceInfo'])->name('users.deviceInfo')->middleware('admin');
+    Route::get('/blacklist', [UserController::class, 'getAllBlacklist'])->name('users.blacklist')->middleware('admin');
+    Route::post('/transfer-to-blacklist/{userId}', [UserController::class, 'transferToBlacklist'])->name('users.transferToBlacklist')->middleware('admin');
+    Route::delete('/blacklist/{id}', [UserController::class, 'deleteFromBlacklist'])->name('users.deleteFromBlacklist')->middleware('admin');
+    Route::get('/request-logs', [UserController::class, 'getAllRequestLogs'])->name('users.requestLogs')->middleware('admin');
+    Route::delete('/request-log/{id}', [UserController::class, 'deleteRequestLog'])->name('users.deleteRequestLog')->middleware('admin');
+    Route::delete('/request-logs', [UserController::class, 'deleteAllRequestLogs'])->name('users.deleteAllRequestLogs')->middleware('admin');
+    Route::post('/transfer-from-request-log/{id}', [UserController::class, 'transferToBlacklistFromRequestLog'])->name('users.transferFromRequestLog')->middleware('admin');
+    Route::get('/{userId}/online-status', [UserController::class, 'getOnlineStatus']);
+    Route::post('/online-status/bulk', [UserController::class, 'getBulkOnlineStatus']);
+    Route::post('/set-online', [UserController::class, 'setOnline']);
+    Route::post('/set-offline', [UserController::class, 'setOffline']);
+});
+
+
+Route::group([
+    'prefix' => 'link',
+    'middleware' => ['api', 'auth:api', 'blacklist', 'throttle.requests'],
+], function () {
+    Route::post('/upload/avatar', [UploadController::class, 'uploadAvatar']);
+    Route::post('/upload/cover', [UploadController::class, 'uploadCover']);
+    Route::delete('/{id}/avatar', [UploadController::class, 'deleteAvatar']);
+    Route::delete('/{id}/cover', [UploadController::class, 'deleteCover']);
+
+});
+Route::group([
+    'prefix' => 'profile',
+    'middleware' => ['api', 'auth:api', 'blacklist', 'throttle.requests'],
+], function () {
+    Route::get('/{id}', [ProfileController::class, 'show'])->name('users.showprofile');
+    Route::get('/{id}/edit', [ProfileController::class, 'edit'])->name('users.editprofile');
+    Route::put('/{id}', [ProfileController::class, 'update'])->name('users.updateprofile');
+});
+
+Route::prefix('story')->middleware(['api', 'auth:api'])->group(function () {
+    Route::get('/chapters', [UploadController::class, 'index']);
+    Route::get('/chapters/{id}', [UploadController::class, 'getChapter']);
+    Route::get('/backgrounds', [StoryController::class, 'getBackgrounds'])->name('backgrounds.get');
+    Route::get('/backgrounds/{id}', [StoryController::class, 'getImage']);
+    Route::post('/save-settings', [StoryController::class, 'saveSettings'])->name('settings.save');
+    Route::get('/{user_id}/settings', [StoryController::class, 'getSettings'])->name('settings.get');
+    Route::put('/settings', [StoryController::class, 'updateSettings'])->name('settings.update');
+    Route::post('/user-chapter', [UserChapterController::class, 'saveOrUpdateCurrentChapter']); 
+    Route::get('/user-chapter', [UserChapterController::class, 'getLastReadChapter']); 
+    Route::get('/guest-chapter/{id}', [UserChapterController::class, 'getGuestLastReadChapter']); 
+    Route::middleware('admin')->group(function () {
+        Route::post('/upload-background', [StoryController::class, 'uploadBackground'])->name('admin.upload-background');
+        Route::put('/chapters/{id}', [UploadController::class, 'updateChapter']);
+        Route::post('/chapters', [UploadController::class, 'createChapter']);
+        Route::delete('/chapters/{id}', [UploadController::class, 'destroy']);
+        Route::put('/backgrounds/{id}', [StoryController::class, 'updateBackground'])->name('backgrounds.update');
+        Route::delete('/backgrounds/{id}', [StoryController::class, 'deleteBackground'])->name('backgrounds.delete');
+    });
+});
+
+Route::group([
+    'prefix' => 'vote',
+    'middleware' => ['api', 'blacklist', 'throttle.requests'],
+], function () {
+    Route::post('/createOrUpdate', [VoteController::class, 'createOrUpdateVote'])->middleware('auth:api');
+    Route::get('/getUserVote', [VoteController::class, 'getUserVote'])->middleware('auth:api'); 
+    Route::get('/results', [VoteController::class, 'getVoteResults']);
+});
+
+Route::prefix('newsletter')->middleware(['api','blacklist', 'throttle.requests'])->group(function () {
+    Route::post('/subscribe', [NewsletterController::class, 'subscribe']);
+    Route::get('/unsubscribe', [NewsletterController::class, 'unsubscribe']);
+    Route::middleware('admin')->group(function () {
+    Route::post('/notifications/create', [NotificationController::class, 'create']);
+    Route::get('/notifications', [NotificationController::class, 'getAll']);
+    Route::delete('/notifications/{id}', [NotificationController::class, 'delete']);
+    Route::get('/emails', [NewsletterController::class, 'getEmails']);
+    });
+});
+Route::group([
+    'prefix' => 'user-notifications',
+    'middleware' => ['throttle.requests'],
+], function () {
+    Route::get('/page-options', [UserNotificationController::class, 'getPageOptions']);
+    Route::get('/', [UserNotificationController::class, 'index']);
+    Route::post('/', [UserNotificationController::class, 'store'])->middleware('admin');
+    Route::get('/{id}', [UserNotificationController::class, 'show']);
+    Route::put('/{id}/text', [UserNotificationController::class, 'updateText'])->middleware('admin');
+    Route::delete('/{id}', [UserNotificationController::class, 'destroy'])->middleware('admin');
+     Route::get('/{id}/vote/results', [UserNotificationController::class, 'getVoteResults']);
+    Route::post('/{id}/vote', [UserNotificationController::class, 'submitVote'])->middleware('auth:api');
+});
+Route::group([
+    'prefix' => 'image-manager',
+    'middleware' => [ 'throttle.requests'],
+], function () {
+    Route::post('/upload', [ImageManagerController::class, 'uploadImage'])->middleware('admin');
+    Route::get('/', [ImageManagerController::class, 'getImages']);
+    Route::get('/{id}', [ImageManagerController::class, 'getImage']);
+    Route::put('/{id}', [ImageManagerController::class, 'updateImage'])->middleware('admin');
+    Route::delete('/{id}', [ImageManagerController::class, 'deleteImage'])->middleware('admin');
+});
+Route::group([
+    'prefix' => 'categories',
+    'middleware' => [ 'throttle.requests'],
+], function () {
+    Route::get('/page-options', [CategoryController::class, 'getPageOptions']);
+    Route::get('/', [CategoryController::class, 'index']);
+    Route::get('/{id}', [CategoryController::class, 'show']);
+    Route::post('/', [CategoryController::class, 'store'])->middleware('admin');
+    Route::put('/{id}', [CategoryController::class, 'update'])->middleware('admin');
+    Route::delete('/{id}', [CategoryController::class, 'destroy'])->middleware('admin');
+});
+Route::group([
+    'middleware' => [ 'throttle.requests'],
+], function () {
+    Route::get('/company-info', [CompanyInfoController::class, 'index']);
+    Route::get('/company-info/{id}', [CompanyInfoController::class, 'show'])->middleware('admin');
+    Route::post('/company-info', [CompanyInfoController::class, 'store'])->middleware('admin');
+    Route::put('/company-info/{id}', [CompanyInfoController::class, 'update'])->middleware('admin');
+    Route::delete('/company-info/{id}', [CompanyInfoController::class, 'destroy'])->middleware('admin');
+});
+
+Route::group([
+    'prefix' => 'sections',
+    'middleware' => [ 'throttle.requests'],
+], function () {
+    Route::get('/', [SectionController::class, 'index']); 
+    Route::post('/', [SectionController::class, 'createSection'])->middleware('admin');
+    Route::get('/{id}', [SectionController::class, 'getSection']); 
+    Route::put('/{id}', [SectionController::class, 'updateSection'])->middleware('admin');
+    Route::delete('/{id}', [SectionController::class, 'destroy'])->middleware('admin');
+});
+
+Route::group([
+    'prefix' => 'hero-slides',
+    'middleware' => ['throttle.requests'],
+], function () {
+    Route::get('/', [HeroSlideController::class, 'index']);
+    Route::get('/{id}', [HeroSlideController::class, 'show']);
+    Route::post('/', [HeroSlideController::class, 'store'])->middleware('admin');
+    Route::put('/{id}', [HeroSlideController::class, 'update'])->middleware('admin');
+    Route::delete('/{id}', [HeroSlideController::class, 'destroy'])->middleware('admin');
+});
+
+
+Route::group([
+    'prefix' => 'future-projects',
+    'middleware' => ['throttle.requests'],
+], function () {
+    Route::get('/', [FutureProjectController::class, 'index']);
+    Route::get('/{id}', [FutureProjectController::class, 'show']);
+    Route::post('/', [FutureProjectController::class, 'store'])->middleware('admin');
+    Route::put('/{id}', [FutureProjectController::class, 'update'])->middleware('admin');
+    Route::delete('/{id}', [FutureProjectController::class, 'destroy'])->middleware('admin');
+});
+
+
+Route::group([
+    'prefix' => 'features',
+    'middleware' => ['throttle.requests'],
+], function () {
+    Route::get('/', [FeatureController::class, 'index']);
+    Route::get('/{id}', [FeatureController::class, 'show']);
+    Route::post('/', [FeatureController::class, 'store'])->middleware('admin');
+    Route::put('/{id}', [FeatureController::class, 'update'])->middleware('admin');
+    Route::delete('/{id}', [FeatureController::class, 'destroy'])->middleware('admin');
+});
+
+
+Route::group([
+    'prefix' => 'videos',
+    'middleware' => ['throttle.requests'],
+], function () {
+    Route::post('/upload', [VideoManagerController::class, 'uploadVideo'])->middleware('admin');
+    Route::get('/featured', [VideoManagerController::class, 'getFeaturedVideo']);
+    Route::get('/', [VideoManagerController::class, 'getVideos']);
+    Route::post('/user-episode', [UserChapterController::class, 'saveOrUpdateCurrentEpisode']); 
+    Route::get('/user-episode', [UserChapterController::class, 'getLastWatchEpisode']); 
+    Route::get('/guest-episode/{id}', [UserChapterController::class, 'getGuestLastWatchEpisode']); 
+    Route::get('/stream/{id}', [VideoManagerController::class, 'streamVideo']);
+    Route::get('/{id}', [VideoManagerController::class, 'getVideo']);
+    Route::put('/{id}', [VideoManagerController::class, 'updateVideo'])->middleware('admin');
+    Route::delete('/{id}', [VideoManagerController::class, 'deleteVideo'])->middleware('admin');
+    Route::put('/{id}/set-featured', [VideoManagerController::class, 'setFeaturedVideo'])->middleware('admin');
+});
+
+Route::group([
+    'prefix' => 'guest',
+    'middleware' => ['api', 'auth:api', 'blacklist', 'throttle.requests'],
+], function () {
+    Route::get('/{id}', [ProfileController::class, 'showGuest'])->name('users.showguest');
+});
+Route::group([
+    'prefix' => 'private',
+    'middleware' => ['api', 'auth:api', 'blacklist', 'throttle.requests'],
+], function () {
+    Route::post('/settings/{id}', [ProfileController::class, 'updateVisibilitySettings']);
+    Route::get('/settings/{id}', [ProfileController::class, 'getVisibilitySettings']);
+    Route::get('/privacy-settings', [ProfileController::class, 'getPrivacySettings']);
+    Route::put('/privacy-settings', [ProfileController::class, 'updatePrivacySettings']);
+});
+Route::group([
+    'prefix' => 'social',
+    'middleware' => ['api', 'auth:api', 'blacklist', 'throttle.requests'],
+], function () {
+    Route::post('/follow/{id}', [FollowController::class, 'follow']);
+    Route::delete('/unfollow/{id}', [FollowController::class, 'unfollow']); 
+    Route::post('/block/{id}', [FollowController::class, 'block']); 
+    Route::delete('/unblock/{id}', [FollowController::class, 'unblock']); 
+    Route::get('/is-following/{id}', [FollowController::class, 'isFollowing']); 
+    Route::get('/is-blocked/{id}', [FollowController::class, 'isBlocked']); 
+    Route::get('/followed-users', [FollowController::class, 'followedUsers']);
+    Route::get('/blocked-users', [FollowController::class, 'blockedUsers']); 
+    Route::get('/follow-stats/{userId}', [FollowController::class, 'getFollowStats']);
+    Route::get('/is-mutual-follow/{id}', [FollowController::class, 'isMutualFollow']);
+});
+Route::group([
+    'prefix' => 'chat',
+    'middleware' => ['api', 'auth:api', 'blacklist', 'throttle.requests'],
+], function () {
+    Route::get('/conversations', [ConversationController::class, 'index']);
+    Route::post('/conversations/get-or-create', [ConversationController::class, 'getOrCreate']);
+    Route::delete('/conversations/{id}', [ConversationController::class, 'destroy']);
+
+    Route::post('/messages/send', [MessageController::class, 'sendMessage']);
+    Route::get('/messages/{conversationId}', [MessageController::class, 'getMessages']);
+    Route::post('/messages/{conversationId}/mark-read', [MessageController::class, 'markAsRead']);
+    Route::get('/messages/unread/count', [MessageController::class, 'getUnreadCount']);
+    
+    Route::delete('/messages/{messageId}', [MessageController::class, 'deleteMessage']);
+    Route::delete('/conversations/{conversationId}/messages', [MessageController::class, 'deleteAllMessages']);
+
+    Route::get('/settings', [MessagingSettingsController::class, 'getSettings']);
+    Route::put('/settings', [MessagingSettingsController::class, 'updateSettings']);
+    Route::get('/settings/user/{userId}', [MessagingSettingsController::class, 'getUserSettings']);
+});
+Route::middleware(['auth:api'])->prefix('support')->group(function () {
+    // Get or create conversation
+    Route::get('/conversation', [SupportChatController::class, 'getOrCreateConversation']);
+    
+    // Send message
+    Route::post('/messages/send', [SupportChatController::class, 'sendMessage']);
+    
+    // Mark as read
+    Route::post('/conversations/{id}/mark-read', [SupportChatController::class, 'markAsRead']);
+    
+    // Get unread count
+    Route::get('/unread-count', [SupportChatController::class, 'getUnreadCount']);
+    
+    // Rate conversation
+    Route::post('/conversations/{id}/rate', [SupportChatController::class, 'rateConversation']);
+    
+    // Check support online
+    Route::get('/check-online', [SupportChatController::class, 'checkSupportOnline']);
+    Route::get('/manage/conversations/{id}/messages', [SupportChatController::class, 'getConversationMessages']);
+});
+
+// Manager/Admin routes
+Route::middleware(['auth:api', 'manager'])->prefix('support/manage')->group(function () {
+    // Get conversations list
+    Route::get('/conversations', [SupportChatController::class, 'getConversations']);
+    
+    // Claim conversation
+    Route::post('/conversations/{id}/claim', [SupportChatController::class, 'claimConversation']);
+    
+    // Send message as support
+    Route::post('/messages/send', [SupportChatController::class, 'sendManagerMessage']);
+    
+    // Mark as read
+    Route::post('/conversations/{id}/mark-read', [SupportChatController::class, 'markAsReadByManager']);
+    
+    // Transfer conversation
+    Route::post('/conversations/{id}/transfer', [SupportChatController::class, 'transferConversation']);
+    
+    // Resolve conversation
+    Route::post('/conversations/{id}/resolve', [SupportChatController::class, 'resolveConversation']);
+    
+    // Get manager statistics
+    Route::get('/statistics/manager/{id}', [SupportChatController::class, 'getManagerStatistics']);
+    
+    // Get managers list
+    Route::get('/managers', [SupportChatController::class, 'getManagers']);
+});
+
+// Admin only routes
+Route::middleware(['auth:api', 'admin'])->prefix('support/admin')->group(function () {
+    // Get overall statistics
+    Route::get('/statistics', [SupportChatController::class, 'getStatistics']);
+});
+Broadcast::routes(['middleware' => ['auth:api']]);
+
+// comment
+Route::middleware('auth:api')->group(function () {
+    // Comments
+    Route::prefix('comments')->group(function () {
+        Route::get('/chapter/{chapterId}', [CommentController::class, 'getChapterComments']);
+        Route::get('/episode/{episodeId}', [CommentController::class, 'getEpisodeComments']);
+        Route::post('/', [CommentController::class, 'store']);
+        Route::put('/{id}', [CommentController::class, 'update']);
+        Route::delete('/{id}', [CommentController::class, 'destroy']);
+        Route::post('/count', [CommentController::class, 'getCommentsCount']);
+    });
+});
+// ========== MUSIC ROUTES (USER) ==========
+Route::group([
+    'prefix' => 'music',
+    'middleware' => ['api', 'auth:api', 'blacklist', 'throttle.requests'],
+], function () {
+    // Public endpoints (albums & tracks)
+    Route::get('/albums', [MusicController::class, 'getAlbums']);
+    Route::get('/albums/{albumId}/tracks', [MusicController::class, 'getAlbumTracks']);
+    
+    // Favorites
+    Route::get('/favorites', [MusicController::class, 'getFavorites']);
+    Route::post('/favorites', [MusicController::class, 'addFavorite']);
+    Route::delete('/favorites/{trackId}', [MusicController::class, 'removeFavorite']);
+    Route::put('/favorites/reorder', [MusicController::class, 'reorderFavorites']);
+});
+
+// ========== MUSIC ROUTES (ADMIN) ==========
+Route::group([
+    'prefix' => 'admin/music',
+    'middleware' => ['api', 'auth:api', 'admin', 'throttle.requests'],
+], function () {
+    // Albums management
+    Route::get('/albums', [MusicController::class, 'adminGetAlbums']);
+    Route::post('/albums', [MusicController::class, 'createAlbum']);
+    Route::put('/albums/{id}', [MusicController::class, 'updateAlbum']);
+    Route::delete('/albums/{id}', [MusicController::class, 'deleteAlbum']);
+    
+    // Tracks management
+    Route::get('/tracks', [MusicController::class, 'adminGetTracks']);
+    Route::post('/tracks', [MusicController::class, 'createTrack']);
+    Route::put('/tracks/{id}', [MusicController::class, 'updateTrack']);
+    Route::delete('/tracks/{id}', [MusicController::class, 'deleteTrack']);
+});

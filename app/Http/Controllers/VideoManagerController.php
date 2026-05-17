@@ -1,0 +1,226 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\VideoManager;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+
+class VideoManagerController extends Controller
+{
+    public function uploadVideo(Request $request)
+    {
+        $request->validate([
+            'video' => 'required|mimes:mp4,mov,avi|max:204800',
+            'video_name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
+            'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120', // 5MB  
+            'episode_number' => 'required|integer|min:0',
+        ]);
+
+        // Lưu video
+        $path = $request->file('video')->store('videomanager', 'public'); 
+
+        // Lưu thumbnail nếu có
+        $thumbnailPath = null;
+        if ($request->hasFile('thumbnail')) {
+            $thumbnailPath = $request->file('thumbnail')->store('thumbnails', 'public');
+        }
+
+        // Tạo bản ghi mới
+        $video = VideoManager::create([
+            'video_name' => $request->video_name,
+            'video_path' => $path,
+            'description' => $request->description,
+            'thumbnail' => $thumbnailPath,
+            'episode_number' => $request->episode_number,
+        ]);
+
+        return response()->json([
+            'message' => 'Video đã được tải lên thành công!',
+            'video' => $video
+        ], 201);
+    }
+
+    public function updateVideo(Request $request, $id)
+    {
+        $request->validate([
+            'video_name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
+            'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
+            'episode_number' => 'required|integer|min:0',
+        ]);
+
+        $video = VideoManager::findOrFail($id);
+
+        // Xử lý cập nhật thumbnail
+        if ($request->hasFile('thumbnail')) {
+            // Xóa thumbnail cũ nếu có
+            if ($video->thumbnail && Storage::exists('public/' . $video->thumbnail)) {
+                Storage::delete('public/' . $video->thumbnail);
+            }
+
+            // Lưu thumbnail mới
+            $thumbnailPath = $request->file('thumbnail')->store('thumbnails', 'public');
+            $video->thumbnail = $thumbnailPath;
+        }
+
+        // Cập nhật thông tin video
+        $video->update([
+            'video_name' => $request->video_name,
+            'description' => $request->description,
+            'episode_number' => $request->episode_number,
+        ]);
+
+        return response()->json([
+            'message' => 'Cập nhật thành công!',
+            'video' => $video
+        ], 200);
+    }
+
+
+    public function getVideos()
+    {
+        $videos = VideoManager::all();
+        return response()->json($videos, 200);
+    }
+
+    public function getVideo($id)
+    {
+        try {
+            $video = VideoManager::findOrFail($id);
+            return response()->json($video, 200);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Video không tìm thấy'], 404);
+        }
+    }
+
+    // public function updateVideo(Request $request, $id)
+    // {
+    //     $request->validate([
+    //         'video_name' => 'required|string|max:255',
+    //         'description' => 'nullable|string|max:1000',
+    //         'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
+    //     ]);
+
+    //     $video = VideoManager::findOrFail($id);
+    //     // Xử lý cập nhật thumbnail
+    //     if ($request->hasFile('thumbnail')) {
+    //         // Xóa thumbnail cũ nếu có
+    //         if ($video->thumbnail && Storage::exists('public/' . $video->thumbnail)) {
+    //             Storage::delete('public/' . $video->thumbnail);
+    //         }
+
+    //         // Lưu thumbnail mới
+    //         $thumbnailPath = $request->file('thumbnail')->store('thumbnails', 'public');
+    //         $video->update([
+    //             'video_name' => $request->video_name,
+    //             'description' => $request->description,
+    //             'thumbnail' => $thumbnailPath,
+    //         ]);
+    //     } else {
+    //         $video->update([
+    //             'video_name' => $request->video_name,
+    //             'description' => $request->description,
+    //         ]);
+    //     }
+
+    //     return response()->json([
+    //         'message' => 'Cập nhật thành công!',
+    //         'video' => $video
+    //     ], 200);
+    // }
+
+    public function deleteVideo($id)
+    {
+        $video = VideoManager::findOrFail($id);
+        if (Storage::exists('public/' . $video->video_path)) {
+            Storage::delete('public/' . $video->video_path);
+        }
+        $video->delete();
+
+        return response()->json(['message' => 'Xóa video thành công!'], 204);
+    }
+
+    public function setFeaturedVideo(Request $request, $id)
+    {
+        // Tìm video hiện tại đang được đặt là đặc biệt
+        $currentFeatured = VideoManager::where('is_featured', true)->first();
+        if ($currentFeatured) {
+            $currentFeatured->update(['is_featured' => false]);
+        }
+
+        // Cập nhật video mới
+        $video = VideoManager::findOrFail($id);
+        $video->update(['is_featured' => true]);
+
+        return response()->json(['message' => 'Video đặc biệt đã được cập nhật!', 'video' => $video], 200);
+    }
+
+    public function getFeaturedVideo()
+    {
+        $video = VideoManager::where('is_featured', true)->first();
+        Log::info("Lấy video đặc biệt:", ['video' => $video]);
+
+        if (!$video) {
+            return response()->json(['message' => 'Chưa có video đặc biệt nào'], 404);
+        }
+        return response()->json($video, 200);
+    }
+
+    /**
+     * Stream video with HTTP Range Request support for seeking.
+     */
+    public function streamVideo($id)
+    {
+        $video = VideoManager::findOrFail($id);
+        $path = storage_path('app/public/' . $video->video_path);
+
+        if (!file_exists($path)) {
+            return response()->json(['message' => 'File video không tồn tại'], 404);
+        }
+
+        $fileSize = filesize($path);
+        $mimeType = mime_content_type($path) ?: 'video/mp4';
+
+        // Check for Range header
+        $request = request();
+        $range = $request->header('Range');
+
+        if ($range) {
+            // Parse Range header
+            preg_match('/bytes=(\d+)-(\d*)/', $range, $matches);
+            $start = intval($matches[1]);
+            $end = isset($matches[2]) && $matches[2] !== '' ? intval($matches[2]) : $fileSize - 1;
+
+            // Validate range
+            if ($start > $end || $start >= $fileSize) {
+                return response('', 416)->header('Content-Range', "bytes */$fileSize");
+            }
+
+            $length = $end - $start + 1;
+
+            $file = fopen($path, 'rb');
+            fseek($file, $start);
+            $data = fread($file, $length);
+            fclose($file);
+
+            return response($data, 206, [
+                'Content-Type' => $mimeType,
+                'Content-Length' => $length,
+                'Content-Range' => "bytes $start-$end/$fileSize",
+                'Accept-Ranges' => 'bytes',
+                'Cache-Control' => 'no-cache',
+            ]);
+        }
+
+        // No Range header — return full file with Accept-Ranges
+        return response()->file($path, [
+            'Content-Type' => $mimeType,
+            'Accept-Ranges' => 'bytes',
+            'Content-Length' => $fileSize,
+        ]);
+    }
+
+}

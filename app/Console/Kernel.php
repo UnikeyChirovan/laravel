@@ -13,6 +13,8 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         // $schedule->command('inspire')->hourly();
+        $schedule->command('users:delete-unverified')->dailyAt('00:00');
+        $schedule->command('users:set-offline')->everyMinute();
     }
 
     /**
@@ -23,5 +25,6 @@ class Kernel extends ConsoleKernel
         $this->load(__DIR__.'/Commands');
 
         require base_path('routes/console.php');
+        
     }
 }

@@ -17,20 +17,20 @@ class UserSeeder extends Seeder
     {
         DB::table("users")->insert([
             [
-            "username" => "admin",
-            "name" =>"Admin",
-            "nickname" => "godofthunder",
-            "email" => "admin@gmail.com",
-            "password" => Hash::make("admin"),
+            "username" => "selorson",
+            "name" =>"Selorson Tales",
+            "nickname" => "Selorson",
+            "email" => "selorson@gmail.com",
+            "password" => Hash::make("123"),
             "department_id" => "1",
             "status_id" => "1"
             ],
             [
-            "username" => "selorsontales",
-            "name" =>"Selorson Tales",
-            "nickname"=>"Selorson",
-            "email" => "selorson@gmail.com",
-            "password" => Hash::make("admin"),
+            "username" => "minato",
+            "name" =>"namikaze minato",
+            "nickname"=>"Minato",
+            "email" => "minato@gmail.com",
+            "password" => Hash::make("123"),
             "department_id" => "2",
             "status_id" => "2"
             ]
